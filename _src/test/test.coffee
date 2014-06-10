@@ -1,9 +1,9 @@
 jQuery( ->
 	MediaApiClient.defaults( { host: "@@testhost", domain: "mediaapitest", accesskey: "@@testaccesskey" } )
 	
-	clientStd = new MediaApiClient( "#standard" )
-	clientCount = new MediaApiClient( "#count" )
-	clientSize = new MediaApiClient( "#smallfile" )
-	clientType = new MediaApiClient( "#acceptonly" )
+	clientStd = new MediaApiClient( "#standard", "#standard .results" )
+	clientCount = new MediaApiClient( "#count", "#count .results")
+	clientSize = new MediaApiClient( "#smallfile", "#smallfile .results" )
+	clientType = new MediaApiClient( "#acceptonly", "#acceptonly .results" )
 	return
 )

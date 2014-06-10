@@ -15,14 +15,20 @@ Media-API Client
 ## JS Init
 
 ```
-new window.MediaAPICli( "#clientEl", { host: "@@host", domain: "@@domain", accesskey: "@@accesskey" } );
+new window.MediaApiClient( dragSelector, [ resultsSelector ], options );
+```
+
+### Examples
+
+```
+new window.MediaApiClient( "#clientEl", "#results", { host: "@@host", domain: "@@domain", accesskey: "@@accesskey" } );
 ```
 
 ```
-window.MediaAPICli.defaults( { host: "@@host", domain: "@@domain", accesskey: "@@accesskey" } )
+window.MediaApiClient.defaults( { host: "@@host", domain: "@@domain", accesskey: "@@accesskey" } )
 	
-new window.MediaAPICli( "#clientEl" )
-new window.MediaAPICli( "#clientEl2" )
+new window.MediaApiClient( "#clientEl" )
+new window.MediaApiClient( "#clientEl2" )
 ```
 
 **Note:** You have to replace the placeholders beginning with `@@`
@@ -37,12 +43,11 @@ Options can be used as JS options or data attributes. Expect the function option
 * **maxsize** ( `Number`, *default `0`* ): Maximum size of a file. `0` means no restriction.
 * **maxcount** ( `Number`, *default `0`*  ): Maximum count of files. `0` means no restriction.
 * **accept** ( `String` ): Mimetyps to accept.
+* **inputclass** ( `String` ): Optional css class to find the file input
 * **keyprefix** ( `String` *default `clientupload`* ): Key prefix 
 * **autostart** ( `Boolean`, *default `true`* ): Start upload on drop/change
 * **requestSignFn** ( `Function` ): Function to generate the signature
 * **resultTemplateFn** ( `Function` ): Template Fucntion to display the File state.
-
-
 
 
 ## OPEN Features

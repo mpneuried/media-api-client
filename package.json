@@ -1,6 +1,6 @@
 {
   "name": "media-api-jsclient",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "TCS Media-API JS client for the browser",
   "private": true,
   "main": " ",

@@ -415,7 +415,7 @@
       this.client = client;
       this.options = options;
       this._defaultTemplate = __bind(this._defaultTemplate, this);
-      this.tenplateData = __bind(this.tenplateData, this);
+      this.templateData = __bind(this.templateData, this);
       this.update = __bind(this.update, this);
       this.render = __bind(this.render, this);
       FileView.__super__.constructor.apply(this, arguments);
@@ -432,19 +432,19 @@
     }
 
     FileView.prototype.render = function() {
-      this.$el = jQuery("<div class=\"col-sm-6 col-md-4 file\"></div>").html(this.template(this.tenplateData()));
+      this.$el = jQuery("<div class=\"col-sm-6 col-md-4 file\"></div>").html(this.template(this.templateData()));
       return this.$el;
     };
 
     FileView.prototype.update = function() {
       return (function(_this) {
         return function(evnt) {
-          _this.$el.html(_this.template(_this.tenplateData()));
+          _this.$el.html(_this.template(_this.templateData()));
         };
       })(this);
     };
 
-    FileView.prototype.tenplateData = function() {
+    FileView.prototype.templateData = function() {
       var _ret;
       return _ret = {
         name: this.client.formname,
@@ -531,7 +531,7 @@
 
     MediaApiClient.prototype._rgxHost = /https?:\/\/[^\/$\s]+/i;
 
-    function MediaApiClient(drag, options) {
+    function MediaApiClient(drag, elresults, options) {
       var _html, _htmlData, _inpAccept, _mxcnt, _mxsz, _opt, _ref, _ref1, _ref2, _ref3;
       if (options == null) {
         options = {};
@@ -562,19 +562,17 @@
       this.on("finish", this.onFinish);
       this.within_enter = false;
       this.$el = this._validateEl(drag, "drag");
-      this.$sel = this.$el.find("input[type='file']");
+      this.$sel = this.$el.find("input" + (options.inputclass || "") + "[type='file']");
       if (!this.$sel.length) {
         this._error(null, "missing-select-el");
         return;
       }
       this.formname = this.$sel.attr("name");
-      this.$res = this.$el.find(".results");
-      if (!this.$res.length) {
-        this._error(null, "missing-result-el");
-        return;
+      if (elresults != null) {
+        this.$res = this._validateEl(elresults, "result");
       }
       _htmlData = this.$el.data();
-      this.options = jQuery.extend({}, _defaults, _htmlData, options);
+      this.options = jQuery.extend({}, _defaults, _htmlData, options || {});
       if (!((_ref = this.options.host) != null ? _ref.length : void 0)) {
         this._error(null, "missing-host");
         retur;
@@ -787,8 +785,10 @@
     MediaApiClient.prototype.fileNew = function(file) {
       var _fileview;
       console.log("fileNew", this.formname, file, file.constructor.name);
-      _fileview = new MediaApiClient.FileView(file, this, this.options);
-      this.$res.append(_fileview.render());
+      if (this.$res != null) {
+        _fileview = new MediaApiClient.FileView(file, this, this.options);
+        this.$res.append(_fileview.render());
+      }
     };
 
     MediaApiClient.prototype.onFinish = function() {

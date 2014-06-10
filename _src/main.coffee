@@ -298,15 +298,15 @@ class FileView extends Base
 		return
 
 	render: =>
-		@$el = jQuery( "<div class=\"col-sm-6 col-md-4 file\"></div>" ).html( @template( @tenplateData() ) )
+		@$el = jQuery( "<div class=\"col-sm-6 col-md-4 file\"></div>" ).html( @template( @templateData() ) )
 		return @$el
 
 	update: =>
 		return ( evnt )=>
-			@$el.html( @template( @tenplateData() ) )
+			@$el.html( @template( @templateData() ) )
 			return 
 
-	tenplateData: =>
+	templateData: =>
 		_ret = 
 			name: @client.formname
 			filename: @fileObj.getName()
@@ -388,7 +388,7 @@ class MediaApiClient extends Base
 
 	_rgxHost: /https?:\/\/[^\/$\s]+/i
 
-	constructor: ( drag, options = {} )->
+	constructor: ( drag, elresults, options = {} )->
 		super
 		@enabled = true
 		@useFileAPI = false
@@ -403,20 +403,19 @@ class MediaApiClient extends Base
 
 
 		@$el = @_validateEl( drag, "drag" )
-		@$sel = @$el.find( "input[type='file']" )
+		@$sel = @$el.find( "input#{ options.inputclass or "" }[type='file']" )
 		if not @$sel.length
 			@_error( null, "missing-select-el" )
 			return
 
 		@formname = @$sel.attr( "name" )
 
-		@$res = @$el.find( ".results" )
-		if not @$res.length
-			@_error( null, "missing-result-el" )
-			return
+		if elresults?
+			@$res = @_validateEl( elresults, "result" )
+
 
 		_htmlData = @$el.data()
-		@options = jQuery.extend( {}, _defaults, _htmlData, options )
+		@options = jQuery.extend( {}, _defaults, _htmlData, options or {} )
 
 		if not @options.host?.length
 			@_error( null, "missing-host" )
@@ -582,8 +581,9 @@ class MediaApiClient extends Base
 
 	fileNew: ( file )=>
 		console.log "fileNew", @formname, file, file.constructor.name
-		_fileview = new MediaApiClient.FileView( file, @, @options )
-		@$res.append( _fileview.render() )	
+		if @$res?
+			_fileview = new MediaApiClient.FileView( file, @, @options )
+			@$res.append( _fileview.render() )	
 		return
 
 	onFinish: =>

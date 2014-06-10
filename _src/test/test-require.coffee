@@ -8,12 +8,12 @@ require.config
 			exports: "Bootstrap"
 
 
-require [ "jquery", "bootstrap", "../build/mediaapiclient" ], ( jQuery, Bootstrap, MediaAPICli )=>
+require [ "jquery", "bootstrap", "../build/mediaapiclient" ], ( jQuery, Bootstrap, MediaApiClient )=>
 	
-	MediaAPICli.defaults( { host: "@@testhost", domain: "mediaapitest", accesskey: "@@testaccesskey" } )
+	MediaApiClient.defaults( { host: "@@testhost", domain: "mediaapitest", accesskey: "@@testaccesskey" } )
 	
-	clientStd = new MediaAPICli( "#standard" )
-	clientCount = new MediaAPICli( "#count" )
-	clientSize = new MediaAPICli( "#smallfile" )
-	clientType = new MediaAPICli( "#acceptonly" )
+	clientStd = new MediaApiClient( "#standard", "#standard .results" )
+	clientCount = new MediaApiClient( "#count", "#count .results")
+	clientSize = new MediaApiClient( "#smallfile", "#smallfile .results" )
+	clientType = new MediaApiClient( "#acceptonly", "#acceptonly .results" )
 	return
