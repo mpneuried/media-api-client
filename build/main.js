@@ -1,0 +1,870 @@
+(function() {
+  var Base, EventEmitter, File, FileView, MediaApiClient, _defauktKeys, _defaults, _k, _v,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  EventEmitter = (function() {
+    function EventEmitter() {}
+
+    EventEmitter.prototype.on = function(name, listener) {
+      var listeners, _base;
+      listeners = (_base = (this._eventListeners != null ? this._eventListeners : this._eventListeners = {}))[name] != null ? _base[name] : _base[name] = [];
+      return listeners.push(listener);
+    };
+
+    EventEmitter.prototype.off = function(name, listener) {
+      var index, listeners, _ref;
+      if (listeners = (_ref = this._eventListeners) != null ? _ref[name] : void 0) {
+        index = listeners.indexOf(listener);
+        if (index >= 0) {
+          return listeners[index] = null;
+        }
+      }
+    };
+
+    EventEmitter.prototype.emit = function(name) {
+      var args, listener, listeners, _i, _len, _ref, _results;
+      if (listeners = (_ref = this._eventListeners) != null ? _ref[name] : void 0) {
+        args = Array.prototype.slice.call(arguments, 1);
+        _results = [];
+        for (_i = 0, _len = listeners.length; _i < _len; _i++) {
+          listener = listeners[_i];
+          _results.push(listener != null ? listener.apply(this, args) : void 0);
+        }
+        return _results;
+      }
+    };
+
+    EventEmitter.prototype.once = function(name, listener) {
+      var remover;
+      remover = (function(_this) {
+        return function() {
+          _this.off(name, listener);
+          return _this.off(name, remover);
+        };
+      })(this);
+      this.on(name, listener);
+      return this.on(name, remover);
+    };
+
+    EventEmitter.prototype.addEventListener = EventEmitter.prototype.on;
+
+    EventEmitter.prototype.removeEventListener = EventEmitter.prototype.off;
+
+    return EventEmitter;
+
+  })();
+
+  Base = (function(_super) {
+    __extends(Base, _super);
+
+    function Base() {
+      this._error = __bind(this._error, this);
+      return Base.__super__.constructor.apply(this, arguments);
+    }
+
+    Base.prototype._error = function(cb, err) {
+      var _err;
+      if (!(err instanceof Error)) {
+        _err = new Error(err);
+        _err.name = err;
+        try {
+          _err.message = this.ERRORS[err] || " - ";
+        } catch (_error) {}
+      } else {
+        _err = err;
+      }
+      if (cb == null) {
+        throw _err;
+      } else {
+        cb(_err);
+      }
+    };
+
+    return Base;
+
+  })(EventEmitter);
+
+  File = (function(_super) {
+    __extends(File, _super);
+
+    File.prototype.states = ["new", "start", "signed", "upload", "progress", "done", "invalid", "error"];
+
+    function File(file, idx, client, options) {
+      var _ref;
+      this.file = file;
+      this.idx = idx;
+      this.client = client;
+      this.options = options;
+      this._defaultRequestSignature = __bind(this._defaultRequestSignature, this);
+      this._handleProgress = __bind(this._handleProgress, this);
+      this._upload = __bind(this._upload, this);
+      this._sign = __bind(this._sign, this);
+      this._now = __bind(this._now, this);
+      this.start = __bind(this.start, this);
+      this.getType = __bind(this.getType, this);
+      this.getName = __bind(this.getName, this);
+      this.getProgress = __bind(this.getProgress, this);
+      this.getResult = __bind(this.getResult, this);
+      this.testMime = __bind(this.testMime, this);
+      this.validate = __bind(this.validate, this);
+      this.getState = __bind(this.getState, this);
+      this.setState = __bind(this.setState, this);
+      File.__super__.constructor.apply(this, arguments);
+      this.state = 0;
+      this.validation = [];
+      this.client.emit("file.new", this);
+      this.on("start", this.start);
+      this.on("signed", this._upload);
+      if (this.options.requestSignFn == null) {
+        this.options.requestSignFn = this._defaultRequestSignature;
+      }
+      if (!((_ref = this.options.keyprefix) != null ? _ref.length : void 0)) {
+        this.options.keyprefix = "clientupload";
+      }
+      if (this.options.autostart == null) {
+        this.options.autostart = true;
+      }
+      this.validate();
+      if (this.options.autostart) {
+        this.emit("start");
+      }
+      return;
+    }
+
+    File.prototype.setState = function(state) {
+      if (state > this.state) {
+        this.state = state;
+        this.emit("state", state);
+      }
+      return state;
+    };
+
+    File.prototype.getState = function() {
+      return this.states[this.state];
+    };
+
+    File.prototype.validate = function() {
+      var _ref, _size;
+      _size = this.file.size / 1024;
+      if (this.options.maxsize > 0 && this.options.maxsize < _size) {
+        this.validation.push("maxsize");
+      }
+      if (((_ref = this.options.acceptRules) != null ? _ref.length : void 0) && !this.testMime(this.options.acceptRules)) {
+        this.validation.push("accept");
+      }
+      if (this.validation.length) {
+        this.setState(6);
+        this.emit("invalid", this.validation);
+        this.client.emit("file.invalid", this, this.validation);
+        return false;
+      }
+      return true;
+    };
+
+    File.prototype.testMime = function(acceptRules) {
+      var _i, _len, _rule;
+      for (_i = 0, _len = acceptRules.length; _i < _len; _i++) {
+        _rule = acceptRules[_i];
+        if (_rule(this.file)) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    File.prototype.getResult = function() {
+      if (this.state === 5 && (this.data != null)) {
+        return {
+          url: this.data.url,
+          hash: this.data.filehash,
+          key: this.data.key,
+          type: this.data.content_type
+        };
+      }
+      return null;
+    };
+
+    File.prototype.getProgress = function(asFactor) {
+      var _fac;
+      if (asFactor == null) {
+        asFactor = false;
+      }
+      if (this.state < 4) {
+        _fac = 0;
+      } else if (this.state > 4) {
+        _fac = 1;
+      } else {
+        _fac = this.progressState;
+      }
+      if (asFactor) {
+        return _fac;
+      } else {
+        return Math.round(_fac * 100);
+      }
+    };
+
+    File.prototype.getName = function() {
+      return this.file.name;
+    };
+
+    File.prototype.getType = function() {
+      return this.file.type;
+    };
+
+    File.prototype.start = function() {
+      if (this.state <= 0) {
+        this.setState(1);
+        this.client.emit("file.upload", this);
+        this._sign();
+      }
+    };
+
+    File.prototype._now = function() {
+      return Math.round(Date.now() / 1000);
+    };
+
+    File.prototype._rgxFile2Key = /([^A-Za-z0-9])/ig;
+
+    File.prototype._sign = function() {
+      var _content_type, _name;
+      _name = this.getName();
+      _content_type = this.getType();
+      if (this.state > 1) {
+        return;
+      }
+      this.key = this.options.keyprefix + "_" + _name.replace(this._rgxFile2Key, "") + "_" + this._now() + "_" + this.idx;
+      this.url = this.options.host + this.options.domain + "/" + this.key;
+      this.json = {
+        blob: true,
+        acl: "public-read",
+        properties: {
+          filename: _name
+        }
+      };
+      if (_content_type != null ? _content_type.length : void 0) {
+        this.json.content_type = _content_type;
+      }
+      this.options.requestSignFn.call(this, this.url, this.key, this.json, (function(_this) {
+        return function(err, signature) {
+          if (err) {
+            _this.error = err;
+            _this.setState(7);
+            _this.emit("error", err);
+            _this.client.emit("file.error", _this, err);
+            return;
+          }
+          if (_this.url.indexOf("?") >= 0) {
+            _this.url += "&";
+          } else {
+            _this.url += "?";
+          }
+          _this.url += "signature=" + encodeURIComponent(signature);
+          _this.setState(2);
+          _this.emit("signed");
+        };
+      })(this));
+    };
+
+    File.prototype._upload = function() {
+      var data;
+      console.log("_upload", this.state, this.idx);
+      if (this.state > 2) {
+        return;
+      }
+      this.setState(3);
+      data = new FormData();
+      data.append("JSON", JSON.stringify(this.json));
+      data.append("blob", this.file);
+      jQuery.ajax({
+        url: this.url,
+        type: "POST",
+        cache: false,
+        data: data,
+        processData: false,
+        contentType: false,
+        success: (function(_this) {
+          return function(resp) {
+            _this.data = resp != null ? resp.rows[0] : void 0;
+            _this.progressState = 1;
+            _this.setState(5);
+            _this.emit("done", _this.data);
+            _this.client.emit("file.done", _this);
+          };
+        })(this),
+        error: (function(_this) {
+          return function(err) {
+            _this.setState(7);
+            _this.progressState = 0;
+            _this.error = err;
+            _this.emit("error", err);
+            _this.client.emit("file.error", _this, err);
+          };
+        })(this),
+        xhr: (function(_this) {
+          return function() {
+            var xhr, _ref;
+            xhr = new window.XMLHttpRequest();
+            if ((_ref = xhr.upload) != null) {
+              _ref.addEventListener("progress", _this._handleProgress(), false);
+            }
+            xhr.addEventListener("progress", _this._handleProgress(), false);
+            return xhr;
+          };
+        })(this)
+      });
+    };
+
+    File.prototype._handleProgress = function() {
+      return (function(_this) {
+        return function(evnt) {
+          _this.progressState = evnt.loaded / evnt.total;
+          _this.setState(4);
+          _this.emit("progress", evnt);
+        };
+      })(this);
+    };
+
+    File.prototype._defaultRequestSignature = function(madiaapiurl, key, json, cb) {
+      var _opt;
+      _opt = {
+        url: this.options.host + this.options.domain + "/sign/" + this.options.accesskey,
+        method: "POST",
+        dataType: "text",
+        data: {
+          url: madiaapiurl,
+          key: key,
+          json: JSON.stringify(json)
+        },
+        success: (function(_this) {
+          return function(signature) {
+            cb(null, signature);
+          };
+        })(this),
+        error: (function(_this) {
+          return function(err) {
+            console.log("AJAX ERROR", arguments);
+            cb(err);
+          };
+        })(this)
+      };
+      console.log("request sign", _opt);
+      jQuery.ajax(_opt);
+    };
+
+    return File;
+
+  })(Base);
+
+
+  /*
+  class FileFallback extends File
+  
+  	validate: =>
+  		return true
+  
+  	getName: =>
+  		return @file.val()
+  
+  	getType: =>
+  		return null
+  
+  	_upload: =>
+  		console.log "_upload fallback", @state, @idx
+  		if @state > 2
+  			return
+  		@setState( 3 )
+  		data = new FormData()
+  		data.append( "JSON", JSON.stringify( @json ) )
+  		data.append( "blob", @file )
+  		
+  		jQuery.ajax 
+  			url: @url
+  			type: "POST"
+  			cache: false
+  			data: data
+  			processData: false
+  			contentType: false
+  			success: ( resp )=>
+  				@data = resp?.rows[ 0 ]
+  				@progressState = 1
+  				@setState( 5 )
+  				@emit( "done", @data )
+  				@client.emit( "file.done", @ )
+  				return
+  			error: ( err )=>
+  				@setState( 7 )
+  				@progressState = 0
+  				@error = err
+  				@emit( "error", err )
+  				@client.emit( "file.error", @, err )
+  				return
+  			xhr: =>
+  				xhr = new window.XMLHttpRequest()
+  				xhr.upload?.addEventListener( "progress", @_handleProgress(), false )
+  				xhr.addEventListener( "progress", @_handleProgress(), false )
+  				return xhr
+  		return
+   */
+
+  FileView = (function(_super) {
+    __extends(FileView, _super);
+
+    function FileView(fileObj, client, options) {
+      this.fileObj = fileObj;
+      this.client = client;
+      this.options = options;
+      this._defaultTemplate = __bind(this._defaultTemplate, this);
+      this.tenplateData = __bind(this.tenplateData, this);
+      this.update = __bind(this.update, this);
+      this.render = __bind(this.render, this);
+      FileView.__super__.constructor.apply(this, arguments);
+      if ((this.client.resultTemplateFn != null) && typeof this.options.resultTemplateFn !== "function") {
+        this.template = this.client.resultTemplateFn;
+      } else {
+        this.template = this._defaultTemplate;
+      }
+      this.fileObj.on("progress", this.update());
+      this.fileObj.on("done", this.update());
+      this.fileObj.on("error", this.update());
+      this.fileObj.on("invalid", this.update());
+      return;
+    }
+
+    FileView.prototype.render = function() {
+      this.$el = $("<div class=\"col-sm-6 col-md-4\"></div>").html(this.template(this.tenplateData()));
+      return this.$el;
+    };
+
+    FileView.prototype.update = function() {
+      return (function(_this) {
+        return function(evnt) {
+          _this.$el.html(_this.template(_this.tenplateData()));
+        };
+      })(this);
+    };
+
+    FileView.prototype.tenplateData = function() {
+      var _ret;
+      return _ret = {
+        name: this.client.formname,
+        filename: this.fileObj.getName(),
+        idx: this.fileObj.idx,
+        state: this.fileObj.getState(),
+        progress: this.fileObj.getProgress(),
+        result: this.fileObj.getResult(),
+        options: this.fileObj.options,
+        invalid_reason: this.fileObj.validation,
+        error: this.fileObj.error
+      };
+    };
+
+    FileView.prototype._defaultTemplate = function(data) {
+      var _html, _i, _k, _len, _reason, _ref, _ref1, _v;
+      _html = "\n<div class=\"thumbnail state-" + data.state + "\">\n	<b>" + data.filename + "</b>";
+      switch (data.state) {
+        case "progress":
+          _html += "<div class=\"progress\">\n	<div class=\"progress-bar\" role=\"progressbar\" aria-valuenow=\"" + data.progress + "\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: " + data.progress + "%;\">\n		" + data.progress + "%\n	</div>\n</div>";
+          break;
+        case "done":
+          _html += "<div class=\"result\">\n	<a href=\"" + data.result.url + "\" target=\"_new\">Fertig! ( " + data.result.key + " )</a>";
+          _ref = data.result;
+          for (_k in _ref) {
+            _v = _ref[_k];
+            _html += "<input type=\"hidden\" name=\"" + data.name + "_" + data.idx + "_" + _k + "\" value=\"" + _v + "\">";
+          }
+          _html += "</div>";
+          break;
+        case "invalid":
+          _html += "<div class=\"result\">\n	<b>Invalid</b>";
+          _ref1 = data.invalid_reason;
+          for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+            _reason = _ref1[_i];
+            switch (_reason) {
+              case "maxsize":
+                _html += "<div class=\"alert alert-error\">File too big. Only files until " + data.options.maxsize + "kb are allowed.</div>";
+                break;
+              case "accept":
+                _html += "<div class=\"alert alert-error\">Wrong type. Only files of type " + (data.options.accept.join(", ")) + " are allowed.</div>";
+            }
+          }
+          _html += "</div>";
+          break;
+        case "error":
+          _html += "<div class=\"alert alert-error\">An Error occured.</div>";
+      }
+      _html += "</div>";
+      return _html;
+    };
+
+    return FileView;
+
+  })(Base);
+
+  _defaults = {
+    host: null,
+    domain: null,
+    accesskey: null,
+    keyprefix: "clientupload",
+    autostart: true,
+    requestSignFn: null,
+    resultTemplateFn: null,
+    maxsize: 0,
+    maxcount: 0,
+    accept: null
+  };
+
+  _defauktKeys = (function() {
+    var _results;
+    _results = [];
+    for (_k in _defaults) {
+      _v = _defaults[_k];
+      _results.push(_k);
+    }
+    return _results;
+  })();
+
+  MediaApiClient = (function(_super) {
+    __extends(MediaApiClient, _super);
+
+    MediaApiClient.prototype.version = "0.0.0";
+
+    MediaApiClient.prototype._rgxHost = /https?:\/\/[^\/$\s]+/i;
+
+    function MediaApiClient(drag, options) {
+      var _html, _htmlData, _inpAccept, _mxcnt, _mxsz, _opt, _ref, _ref1, _ref2, _ref3;
+      if (options == null) {
+        options = {};
+      }
+      this._validateEl = __bind(this._validateEl, this);
+      this._checkFinish = __bind(this._checkFinish, this);
+      this.onFinish = __bind(this.onFinish, this);
+      this.fileNew = __bind(this.fileNew, this);
+      this.fileError = __bind(this.fileError, this);
+      this.fileDone = __bind(this.fileDone, this);
+      this.enable = __bind(this.enable, this);
+      this.disable = __bind(this.disable, this);
+      this.upload = __bind(this.upload, this);
+      this.onLeave = __bind(this.onLeave, this);
+      this.onOver = __bind(this.onOver, this);
+      this.onHover = __bind(this.onHover, this);
+      this.onSelect = __bind(this.onSelect, this);
+      this.initFileAPI = __bind(this.initFileAPI, this);
+      this.initialize = __bind(this.initialize, this);
+      this.generateAcceptRules = __bind(this.generateAcceptRules, this);
+      MediaApiClient.__super__.constructor.apply(this, arguments);
+      this.enabled = true;
+      this.useFileAPI = false;
+      this.on("file.new", this.fileNew);
+      this.on("file.done", this.fileDone);
+      this.on("file.error", this.fileError);
+      this.on("file.invalid", this.fileError);
+      this.on("finish", this.onFinish);
+      this.within_enter = false;
+      this.$el = this._validateEl(drag, "drag");
+      this.$sel = this.$el.find("input[type='file']");
+      if (!this.$sel.length) {
+        this._error(null, "missing-select-el");
+        return;
+      }
+      this.formname = this.$sel.attr("name");
+      this.$res = this.$el.find(".results");
+      if (!this.$res.length) {
+        this._error(null, "missing-result-el");
+        return;
+      }
+      _htmlData = this.$el.data();
+      this.options = jQuery.extend({}, _defaults, _htmlData, options);
+      if (!((_ref = this.options.host) != null ? _ref.length : void 0)) {
+        this._error(null, "missing-host");
+        retur;
+      }
+      if (!this._rgxHost.test(this.options.host)) {
+        this._error(null, "invalid-host");
+        return;
+      }
+      if (!((_ref1 = this.options.domain) != null ? _ref1.length : void 0)) {
+        this._error(null, "missing-domain");
+        return;
+      }
+      if (!((_ref2 = this.options.accesskey) != null ? _ref2.length : void 0)) {
+        this._error(null, "missing-accesskey");
+        return;
+      }
+      if (this.options.maxcount != null) {
+        _mxcnt = parseInt(this.options.maxcount, 10);
+        if (isNaN(_mxcnt)) {
+          this.options.maxcount = _defaults.maxcount;
+        } else {
+          this.options.maxcount = _mxcnt;
+        }
+      }
+      if (this.options.maxcount !== 1) {
+        this.$sel.attr("multiple", "multiple");
+      }
+      if (this.options.maxsize != null) {
+        _mxsz = parseInt(this.options.maxsize, 10);
+        if (isNaN(_mxsz)) {
+          this.options.maxsize = _defaults.maxsize;
+        } else {
+          this.options.maxsize = _mxsz;
+        }
+      }
+      if ((this.options.requestSignFn != null) && typeof this.options.requestSignFn !== "function") {
+        this._error(null, "invalid-requestSignfn");
+        return;
+      }
+      _inpAccept = this.$sel.attr("accept");
+      if ((this.options.accept != null) || (_inpAccept != null)) {
+        _html = (_inpAccept != null ? _inpAccept.split(",") : void 0) || [];
+        _opt = ((_ref3 = this.options.accept) != null ? _ref3.split(",") : void 0) || [];
+        if (_html != null ? _html.length : void 0) {
+          this.options.accept = _html;
+        } else if (_opt != null ? _opt.length : void 0) {
+          this.$sel.attr("accept", this.options.accept);
+        }
+        this.options.acceptRules = this.generateAcceptRules(this.options.accept);
+      }
+      this.initialize();
+      this.idx_started = 0;
+      this.idx_finished = 0;
+      this.$el.data("mediaapiclient", this);
+      return;
+    }
+
+    MediaApiClient.prototype.generateAcceptRules = function(accept) {
+      var _i, _len, _rule, _rules;
+      _rules = [];
+      for (_i = 0, _len = accept.length; _i < _len; _i++) {
+        _rule = accept[_i];
+        if (_rule.indexOf("/") >= 0) {
+          _rules.push((function() {
+            var _regex;
+            _regex = new RegExp("" + (_rule.replace("*", "\\w+")) + "$", "i");
+            return function(file) {
+              return _regex.test(file.type);
+            };
+          })());
+        } else if (_rule.indexOf(".") >= 0) {
+          _rules.push((function() {
+            var _regex;
+            _regex = new RegExp("" + (_rule.replace(".", "\\.")) + "$", "i");
+            return function(file) {
+              return _regex.test(file.name);
+            };
+          })());
+        } else if (_rule === "*") {
+          _rules.push((function(file) {
+            return true;
+          }));
+        }
+      }
+      return _rules;
+    };
+
+    MediaApiClient.prototype.initialize = function() {
+      if (window.File && window.FileList && window.FileReader) {
+        this.$sel.on("change", this.onSelect());
+        this.useFileAPI = true;
+        this.initFileAPI();
+      }
+    };
+
+    MediaApiClient.prototype.initFileAPI = function() {
+      var xhr;
+      xhr = new XMLHttpRequest();
+      if (xhr != null ? xhr.upload : void 0) {
+        this.$el.on("dragover", this.onHover());
+        this.$el.on("dragover", this.onOver());
+        this.$el.on("dragleave", this.onLeave());
+        this.$el.on("drop", this.onSelect());
+        this.$el.addClass("droppable");
+      } else {
+
+      }
+    };
+
+    MediaApiClient.prototype.onSelect = function() {
+      return (function(_this) {
+        return function(evnt) {
+          var files, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
+          evnt.preventDefault();
+          if (!_this.enabled) {
+            return;
+          }
+          if (_this.options.maxcount <= 0 || _this.idx_started < _this.options.maxcount) {
+            _this.$el.removeClass("hover").addClass("process");
+            files = ((_ref = evnt.target) != null ? _ref.files : void 0) || ((_ref1 = evnt.originalEvent) != null ? (_ref2 = _ref1.target) != null ? _ref2.files : void 0 : void 0) || ((_ref3 = evnt.dataTransfer) != null ? _ref3.files : void 0) || ((_ref4 = evnt.originalEvent) != null ? (_ref5 = _ref4.dataTransfer) != null ? _ref5.files : void 0 : void 0);
+            _this.upload(files);
+          } else {
+            _this.$el.removeClass("hover");
+            _this.disable();
+          }
+        };
+      })(this);
+    };
+
+    MediaApiClient.prototype.onHover = function() {
+      return (function(_this) {
+        return function(evnt) {
+          evnt.preventDefault();
+          if (!_this.enabled) {
+            return;
+          }
+          _this.within_enter = true;
+          setTimeout((function() {
+            return _this.within_enter = false;
+          }), 0);
+          _this.$el.addClass("hover");
+        };
+      })(this);
+    };
+
+    MediaApiClient.prototype.onOver = function() {
+      return (function(_this) {
+        return function(evnt) {
+          evnt.preventDefault();
+          if (!_this.enabled) {
+            return;
+          }
+        };
+      })(this);
+    };
+
+    MediaApiClient.prototype.onLeave = function() {
+      return (function(_this) {
+        return function(evnt) {
+          if (!_this.enabled) {
+            return;
+          }
+          if (!_this.within_enter) {
+            _this.$el.removeClass("hover");
+          }
+        };
+      })(this);
+    };
+
+    MediaApiClient.prototype.upload = function(files) {
+      var file, idx, _i, _len;
+      if (this.useFileAPI) {
+        for (idx = _i = 0, _len = files.length; _i < _len; idx = ++_i) {
+          file = files[idx];
+          if (this.enabled) {
+            if (this.options.maxcount <= 0 || this.idx_started < this.options.maxcount) {
+              this.idx_started++;
+              new File(file, this.idx_started, this, this.options);
+            } else {
+              this.disable();
+            }
+          }
+        }
+      }
+    };
+
+    MediaApiClient.prototype.disable = function() {
+      this.$sel.attr("disabled", "disabled");
+      this.$el.addClass("disabled");
+      this.enabled = false;
+    };
+
+    MediaApiClient.prototype.enable = function() {
+      this.$sel.removeAttr("disabled");
+      this.$el.removeClass("disabled");
+      this.enabled = true;
+    };
+
+    MediaApiClient.prototype.fileDone = function(file) {
+      this.idx_finished++;
+      this._checkFinish();
+    };
+
+    MediaApiClient.prototype.fileError = function(file, err) {
+      console.error("FILE-ERROR", file, err);
+      this.idx_finished++;
+      this._checkFinish();
+    };
+
+    MediaApiClient.prototype.fileNew = function(file) {
+      var _fileview;
+      console.log("fileNew", this.formname, file, file.constructor.name);
+      _fileview = new FileView(file, this, this.options);
+      this.$el.after(_fileview.render());
+    };
+
+    MediaApiClient.prototype.onFinish = function() {
+      this.$el.removeClass("process");
+    };
+
+    MediaApiClient.prototype._checkFinish = function() {
+      if (this.idx_finished >= this.idx_started) {
+        this.emit("finish");
+        if (this.options.maxcount > 0 && this.idx_started >= this.options.maxcount) {
+          this.disable();
+        }
+      }
+    };
+
+    MediaApiClient.prototype._validateEl = function(el, type) {
+      var _el;
+      if (el == null) {
+        this._error(null, "missing-" + type + "-el");
+        return;
+      }
+      switch (typeof el) {
+        case "string":
+          _el = jQuery(el);
+          break;
+        case "object":
+          if (el instanceof jQuery) {
+            _el = jQuery(el);
+          }
+          if (el instanceof HTMLElement) {
+            _el = jQuery(el);
+          }
+      }
+      if (!(_el != null ? _el.length : void 0)) {
+        this._error(null, "invalid-" + type + "-el");
+        return;
+      }
+      return _el;
+    };
+
+    MediaApiClient.prototype.ERRORS = {
+      "missing-select-el": "Missing select element. Please define a valid element as a jQuery Selector, DOM-node oder jQuery object",
+      "invalid-select-el": "Invalid select element. Please define a valid element as a jQuery Selector, DOM-node oder jQuery object",
+      "missing-drag-el": "Missing drag element. Please define a valid element as a jQuery Selector, DOM-node oder jQuery object",
+      "invalid-drag-el": "Invalid drag element. Please define a valid element as a jQuery Selector, DOM-node oder jQuery object",
+      "missing-host": "Missing host. You have to defien a host as url starting with `http://` or `https://`.",
+      "invalid-host": "Invalid host. You have to defien a host as url starting with `http://` or `https://`.",
+      "missing-domain": "Missing domain. You have to define a domain.",
+      "missing-accesskey": "Missing accesskey. You have to define a accesskey.",
+      "missing-keyprefix": "Missing keyprefix. You have to define a keyprefix."
+    };
+
+    return MediaApiClient;
+
+  })(Base);
+
+  MediaApiClient.defaults = function(options) {
+    for (_k in options) {
+      _v = options[_k];
+      if (__indexOf.call(_defauktKeys, _k) >= 0) {
+        _defaults[_k] = _v;
+      }
+    }
+    return _defaults;
+  };
+
+  if (typeof define !== "undefined" && define !== null) {
+    define(["jquery", "bootstrap", "../bower_components/jssha/src/sha1.js"], (function(_this) {
+      return function(jQuery, Bootstrap, Sha1) {
+        return MediaApiClient;
+      };
+    })(this));
+  } else {
+    window.MediaApiClient = MediaApiClient;
+  }
+
+}).call(this);
