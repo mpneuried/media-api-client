@@ -13,21 +13,22 @@ module.exports = (grunt) ->
 				files: ["_src/**/*.css"]
 				tasks: [ "copy:css" ]
 
+			stylus:
+				files: ["_src/**/*.styl"]
+				tasks: [ "stylus:css" ]
+
 			test:
 				files: ["_src/test/**/*.coffee"]
 				tasks: [ "coffee:test", "includereplace:test" ]
 
 			testhtml:
 				files: ["_src/test/**/*.html"]
-				tasks: [ "copy:testhtml" ]
+				tasks: [ "copy:testhtml", "includereplace:test" ]
 
 		coffee:
 			base:
-				expand: true
-				cwd: '_src',
-				src: ["**/*.coffee", "!test/**/*.coffee"]
-				dest: 'build'
-				ext: '.js'
+				files:
+					"build/mediaapiclient.js": ["_src/main.coffee"]
 
 			test:
 				expand: true
@@ -35,6 +36,14 @@ module.exports = (grunt) ->
 				src: ["**/*.coffee"]
 				dest: 'test'
 				ext: '.js'
+
+		stylus:
+			options:
+				compress: false
+			css:
+				files:
+					"build/mediaapiclient.css": ["_src/main.styl"]
+					"build/mediaapiclient-nonbootstrap.css": ["_src/nonbootstrap.styl"]
 
 		copy:
 			testhtml:
@@ -44,12 +53,20 @@ module.exports = (grunt) ->
 				dest: ''
 				ext: '.html'
 
+		uglify:
+			options: 
+				banner: "/*\nMedia-API Client (<%= pkg.version %>)\n*/\n"
+			js:
+				files:
+					"build/mediaapiclient.min.js": ["build/mediaapiclient.js"]
+
+		cssmin:
+			options: 
+				banner: "/*\nMedia-API Client (<%= pkg.version %>)\n*/"
 			css:
-				expand: true
-				cwd: '_src',
-				src: ["**/*.css"]
-				dest: 'build'
-				ext: '.css'
+				files:
+					"build/mediaapiclient.min.css": ["build/mediaapiclient.css"]
+					"build/mediaapiclient-nonbootstrap.min.css": ["build/mediaapiclient-nonbootstrap.css"]
 
 		includereplace: 
 			base:
@@ -61,7 +78,7 @@ module.exports = (grunt) ->
 					suffix: ''
 
 				files:
-					"build/main.js": ["build/main.js"]
+					"build/mediaapiclient.js": ["build/mediaapiclient.js"]
 
 			test:
 				options:
@@ -75,13 +92,17 @@ module.exports = (grunt) ->
 				files:
 					"test/test.js": ["test/test.js"]
 					"test/test.html": ["test/test.html"]
+					"test/test-require.js": ["test/test-require.js"]
+					"test/test-require.html": ["test/test-require.html"]
 
 
 	# Load npm modules
 	grunt.loadNpmTasks "grunt-contrib-watch"
 	grunt.loadNpmTasks "grunt-contrib-coffee"
+	grunt.loadNpmTasks "grunt-contrib-stylus"
 	grunt.loadNpmTasks "grunt-contrib-copy"
 	grunt.loadNpmTasks "grunt-contrib-uglify"
+	grunt.loadNpmTasks "grunt-contrib-cssmin"
 	grunt.loadNpmTasks "grunt-include-replace"
 
 	# just a hack until this issue has been fixed: https://github.com/yeoman/grunt-regarde/issues/3
@@ -89,10 +110,10 @@ module.exports = (grunt) ->
 	
 	# ALIAS TASKS
 	grunt.registerTask "default", "build-test"
-	#grunt.registerTask "test", [ "mochacli:main" ]
+	grunt.registerTask "minify", [ "uglify:js", "cssmin:css" ]
 
 	# build the project
-	grunt.registerTask "build", [ "coffee:base", "copy:css",  "includereplace:base" ]
+	grunt.registerTask "build", [ "coffee:base", "stylus:css", "includereplace:base", "minify" ]
 
 	# build the project
 	grunt.registerTask "build-test", [ "build", "coffee:test", "includereplace:test", "copy:testhtml" ]

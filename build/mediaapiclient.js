@@ -328,30 +328,28 @@
     };
 
     File.prototype._defaultRequestSignature = function(madiaapiurl, key, json, cb) {
-      var _opt;
-      _opt = {
-        url: this.options.host + this.options.domain + "/sign/" + this.options.accesskey,
-        method: "POST",
-        dataType: "text",
-        data: {
-          url: madiaapiurl,
-          key: key,
-          json: JSON.stringify(json)
-        },
-        success: (function(_this) {
-          return function(signature) {
-            cb(null, signature);
-          };
-        })(this),
-        error: (function(_this) {
-          return function(err) {
-            console.log("AJAX ERROR", arguments);
-            cb(err);
-          };
-        })(this)
+      var _data, _error, _req, _success, _url;
+      _url = this.options.host + this.options.domain + "/sign/" + this.options.accesskey;
+      _data = {
+        url: madiaapiurl,
+        key: key,
+        json: JSON.stringify(json)
       };
-      console.log("request sign", _opt);
-      jQuery.ajax(_opt);
+      _success = (function(_this) {
+        return function(signature) {
+          console.log("RETURN", arguments);
+          cb(null, signature);
+        };
+      })(this);
+      _error = (function(_this) {
+        return function(err) {
+          console.log("AJAX ERROR", arguments);
+          cb(err);
+        };
+      })(this);
+      _req = jQuery.post(_url, _data, null, "text");
+      _req.done(_success);
+      _req.error(_error);
     };
 
     return File;
@@ -434,7 +432,7 @@
     }
 
     FileView.prototype.render = function() {
-      this.$el = $("<div class=\"col-sm-6 col-md-4\"></div>").html(this.template(this.tenplateData()));
+      this.$el = jQuery("<div class=\"col-sm-6 col-md-4 file\"></div>").html(this.template(this.tenplateData()));
       return this.$el;
     };
 
@@ -463,10 +461,10 @@
 
     FileView.prototype._defaultTemplate = function(data) {
       var _html, _i, _k, _len, _reason, _ref, _ref1, _v;
-      _html = "\n<div class=\"thumbnail state-" + data.state + "\">\n	<b>" + data.filename + "</b>";
+      _html = "<div class=\"thumbnail state-" + data.state + "\">\n	<b>" + data.filename + "</b>";
       switch (data.state) {
         case "progress":
-          _html += "<div class=\"progress\">\n	<div class=\"progress-bar\" role=\"progressbar\" aria-valuenow=\"" + data.progress + "\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: " + data.progress + "%;\">\n		" + data.progress + "%\n	</div>\n</div>";
+          _html += "<div class=\"progress\">\n	<div class=\"progress-bar\" role=\"progressbar\" aria-valuenow=\"" + data.progress + "\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: " + data.progress + "%;\">\n		<span>" + data.progress + "%</span>\n	</div>\n</div>";
           break;
         case "done":
           _html += "<div class=\"result\">\n	<a href=\"" + data.result.url + "\" target=\"_new\">Fertig! ( " + data.result.key + " )</a>";
@@ -754,7 +752,7 @@
           if (this.enabled) {
             if (this.options.maxcount <= 0 || this.idx_started < this.options.maxcount) {
               this.idx_started++;
-              new File(file, this.idx_started, this, this.options);
+              new MediaApiClient.File(file, this.idx_started, this, this.options);
             } else {
               this.disable();
             }
@@ -789,8 +787,8 @@
     MediaApiClient.prototype.fileNew = function(file) {
       var _fileview;
       console.log("fileNew", this.formname, file, file.constructor.name);
-      _fileview = new FileView(file, this, this.options);
-      this.$el.after(_fileview.render());
+      _fileview = new MediaApiClient.FileView(file, this, this.options);
+      this.$res.append(_fileview.render());
     };
 
     MediaApiClient.prototype.onFinish = function() {
@@ -846,6 +844,10 @@
     return MediaApiClient;
 
   })(Base);
+
+  MediaApiClient.File = File;
+
+  MediaApiClient.FileView = FileView;
 
   MediaApiClient.defaults = function(options) {
     for (_k in options) {

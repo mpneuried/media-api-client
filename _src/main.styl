@@ -1,0 +1,50 @@
+@import "nib"
+
+.mediaapiclient
+	display block
+	border 1px dashed #555
+	border-radius 2px
+	cursor default
+	position relative
+	margin 5px 0
+	
+	.dropinfo
+		font-weight bold
+		text-align center
+		padding 20px
+		color #555
+
+	.dropactive
+		display none
+
+	.dropfallback
+		display block
+
+	input
+		visibility hidden
+		position absolute
+		left -5000px
+
+	.file.state-error
+		background-color rgba( red, .25 )
+
+.mediaapiclient.droppable .dropactive
+	display block
+
+.mediaapiclient.droppable .dropfallback
+	display none
+
+.mediaapiclient.disabled
+	opacity .3
+
+.mediaapiclient.hover
+	color #00f
+	border-color #00f
+	border-style solid
+	background-color rgba( #00f, .1 )
+
+.mediaapiclient.process
+	opacity 1
+	color #0ff
+	border-color #0ff
+	border-style solid

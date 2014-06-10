@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Media API Client TEST</title>
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="../build/mediaapiclient-nonbootstrap.css">
+    <style>
+      body {
+        font-family: Helvetica, Arial, Verdana;
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <h3>Media API upload TEST</h3>
+
+    <form id="filedrop" method="POST" enctype="multipart/form-data">
+
+        <label id="standard" class="mediaapiclient" for="standardselect">
+          <b class="dropinfo dropactive"><span>click to select or drop files here</span></b>
+          <b class="dropinfo dropfallback"><span>Your Browser is not supported. Please use a modern Browser.</span></b>
+          <input type="file" id="standardselect" name="standard" multiple="multiple" />
+          <div class="results"></div>
+        </label>
+
+        <label id="count" class="mediaapiclient" for="countselect" data-keyprefix="count" data-maxcount="1">
+          <b class="dropinfo dropactive"><span>click to select or drop files here ( only one )</span></b>
+           <b class="dropinfo dropfallback"><span>Your Browser is not supported. Please use a modern Browser.</span></b>
+          <input type="file" id="countselect" name="count" />
+          <div class="results"></div>
+        </label>
+
+        <label id="smallfile" class="mediaapiclient" for="smallfileselect" data-keyprefix="smallfile" data-maxsize="1000">
+          <b class="dropinfo dropactive"><span>click to select or drop files here ( max size 1000kb )</span></b>
+           <b class="dropinfo dropfallback"><span>Your Browser is not supported. Please use a modern Browser.</span></b>
+          <input type="file" id="smallfileselect" name="smallfile" />
+          <div class="results"></div>
+        </label>
+
+        <label id="acceptonly" class="mediaapiclient" for="acceptonlyselect" data-keyprefix="acceptonly">
+          <b class="dropinfo dropactive"><span>click to select or drop files here ( only pdf )</span></b>
+           <b class="dropinfo dropfallback"><span>Your Browser is not supported. Please use a modern Browser.</span></b>
+          <input type="file" id="acceptonlyselect" name="acceptonly" accept=".pdf,.csv,image/*" />
+          <div class="results"></div>
+        </label>
+
+    </form>
+
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.js"></script>
+    <script src="../build/mediaapiclient.js"></script>
+    <script src="./test.js"></script>
+  </body>
+</html>

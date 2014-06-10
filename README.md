@@ -53,3 +53,8 @@ Options can be used as JS options or data attributes. Expect the function option
 [x] option.maxcount
 [x] option.accept
 [-] support for non FileAPI Browsers 
+[x] jQuery 1.8.3 Ajax Problem
+[ ] No autostart
+[ ] Cancel / Start / Stop buttons per file
+[ ] Start / Cancel / Stop all button
+

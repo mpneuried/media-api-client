@@ -1,0 +1,37 @@
+@import "./main.styl"
+
+.file
+	position relative
+	//margin-top 5px
+	border 1px solid #000 + 50%
+	border-top 0px solid
+	padding 5px 10px
+	margin 0 5px
+	b 
+		color #666
+			
+	.progress
+		position absolute
+		top 0
+		left 0
+		bottom 0
+		right 0
+
+	.progress-bar
+		background-color rgba( blue, .3 )
+		text-align right
+		height 100%
+		padding 0
+		color white
+		font-size 13px
+		span
+			display block
+			padding 6px 20px 0 0
+
+.file:first-child
+	border-top 1px solid #000 + 50%
+	border-radius top 2px
+
+.file:last-child
+	border-radius bottom 2px
+	margin-bottom 5px

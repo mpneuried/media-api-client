@@ -40,8 +40,6 @@ class Base extends EventEmitter
 			cb( _err )
 		return
 
-
-
 class File extends Base
 
 	states: [ "new", "start", "signed", "upload", "progress", "done", "invalid", "error" ]
@@ -214,23 +212,23 @@ class File extends Base
 			return
 
 	_defaultRequestSignature: ( madiaapiurl, key, json, cb )=>
-		_opt = 
-			url: @options.host + @options.domain + "/sign/" + @options.accesskey
-			method: "POST"
-			dataType: "text"
-			data: 
-				url: madiaapiurl
-				key: key
-				json: JSON.stringify( json )
-			success: ( signature )=>
+		_url = @options.host + @options.domain + "/sign/" + @options.accesskey
+		_data = 
+			url: madiaapiurl
+			key: key
+			json: JSON.stringify( json )
+		_success = ( signature )=>
+				console.log "RETURN", arguments
 				cb( null, signature )
 				return
-			error: ( err )=>
+		_error = ( err )=>
 				console.log "AJAX ERROR", arguments
 				cb( err )
 				return 
-		console.log "request sign", _opt
-		jQuery.ajax _opt
+
+		_req = jQuery.post( _url, _data, null, "text" )
+		_req.done _success
+		_req.error _error
 			
 		return
 
@@ -300,7 +298,7 @@ class FileView extends Base
 		return
 
 	render: =>
-		@$el = $( "<div class=\"col-sm-6 col-md-4\"></div>" ).html( @template( @tenplateData() ) )
+		@$el = jQuery( "<div class=\"col-sm-6 col-md-4 file\"></div>" ).html( @template( @tenplateData() ) )
 		return @$el
 
 	update: =>
@@ -322,7 +320,6 @@ class FileView extends Base
 
 	_defaultTemplate: ( data )=>
 		_html = """
-
 	<div class="thumbnail state-#{ data.state }">
 		<b>#{ data.filename}</b>
 		"""
@@ -331,7 +328,7 @@ class FileView extends Base
 				_html += """
 				<div class="progress">
 					<div class="progress-bar" role="progressbar" aria-valuenow="#{data.progress}" aria-valuemin="0" aria-valuemax="100" style="width: #{data.progress}%;">
-						#{data.progress}%
+						<span>#{data.progress}%</span>
 					</div>
 				</div>
 				"""
@@ -555,7 +552,7 @@ class MediaApiClient extends Base
 			for file, idx in files when @enabled
 				if @options.maxcount <= 0 or @idx_started < @options.maxcount
 					@idx_started++
-					new File( file, @idx_started, @, @options )
+					new MediaApiClient.File( file, @idx_started, @, @options )
 				else
 					@disable()
 		return
@@ -585,8 +582,8 @@ class MediaApiClient extends Base
 
 	fileNew: ( file )=>
 		console.log "fileNew", @formname, file, file.constructor.name
-		_fileview = new FileView( file, @, @options )
-		@$el.after( _fileview.render() )	
+		_fileview = new MediaApiClient.FileView( file, @, @options )
+		@$res.append( _fileview.render() )	
 		return
 
 	onFinish: =>
@@ -633,6 +630,8 @@ class MediaApiClient extends Base
 		"missing-accesskey": "Missing accesskey. You have to define a accesskey."
 		"missing-keyprefix": "Missing keyprefix. You have to define a keyprefix."
 
+MediaApiClient.File = File
+MediaApiClient.FileView = FileView
 
 MediaApiClient.defaults = ( options )->
 	for _k, _v of options when _k in _defauktKeys
