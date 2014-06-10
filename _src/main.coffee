@@ -630,6 +630,7 @@ class MediaApiClient extends Base
 		"missing-accesskey": "Missing accesskey. You have to define a accesskey."
 		"missing-keyprefix": "Missing keyprefix. You have to define a keyprefix."
 
+MediaApiClient.Base = Base
 MediaApiClient.File = File
 MediaApiClient.FileView = FileView
 

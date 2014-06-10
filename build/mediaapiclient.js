@@ -527,7 +527,7 @@
   MediaApiClient = (function(_super) {
     __extends(MediaApiClient, _super);
 
-    MediaApiClient.prototype.version = "0.0.0";
+    MediaApiClient.prototype.version = "0.1.0";
 
     MediaApiClient.prototype._rgxHost = /https?:\/\/[^\/$\s]+/i;
 
@@ -844,6 +844,8 @@
     return MediaApiClient;
 
   })(Base);
+
+  MediaApiClient.Base = Base;
 
   MediaApiClient.File = File;
 
