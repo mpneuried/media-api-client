@@ -1,9 +1,27 @@
 (function() {
-  var Base, EventEmitter, File, FileView, MediaApiClient, _defauktKeys, _defaults, _k, _v,
+  var Base, EventEmitter, File, FileView, MediaApiClient, isArray, isInt, isObject, isString, _defauktKeys, _defaults, _intRegex, _k, _v,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  isArray = function(vr) {
+    return Object.prototype.toString.call(vr) === '[object Array]';
+  };
+
+  isObject = function(vr) {
+    return vr !== null && typeof vr === 'object';
+  };
+
+  isString = function(vr) {
+    return typeof vr === 'string' || vr instanceof String;
+  };
+
+  _intRegex = /^\d+$/;
+
+  isInt = function(vr) {
+    return _intRegex.test(vr);
+  };
 
   EventEmitter = (function() {
     function EventEmitter() {}
@@ -257,15 +275,25 @@
       this.url = this.options.host + this.options.domain + "/" + this.key;
       this.json = {
         blob: true,
-        acl: "public-read",
+        acl: this.options.acl,
+        ttl: this.options.ttl,
         properties: {
           filename: _name
         }
       };
+      if (this.options.tags != null) {
+        this.json.tags = this.options.tags;
+      }
+      if (this.options.properties != null) {
+        this.json.properties = this.options.properties;
+      }
+      if (this.options["content-disposition"] != null) {
+        this.json["content-disposition"] = this.options["content-disposition"];
+      }
       if (_content_type != null ? _content_type.length : void 0) {
         this.json.content_type = _content_type;
       }
-      this.options.requestSignFn.call(this, this.url, this.key, this.json, (function(_this) {
+      this.options.requestSignFn.call(this, this.options.domain, this.options.accesskey, this.url, this.key, this.json, (function(_this) {
         return function(err, signature) {
           if (err) {
             _this.error = err;
@@ -345,9 +373,9 @@
       })(this);
     };
 
-    File.prototype._defaultRequestSignature = function(madiaapiurl, key, json, cb) {
+    File.prototype._defaultRequestSignature = function(domain, accesskey, madiaapiurl, key, json, cb) {
       var _data, _error, _req, _success, _url;
-      _url = this.options.host + this.options.domain + "/sign/" + this.options.accesskey;
+      _url = this.options.host + domain + "/sign/" + accesskey;
       _data = {
         url: madiaapiurl,
         key: key,
@@ -513,7 +541,12 @@
     resultTemplateFn: null,
     maxsize: 0,
     maxcount: 0,
-    accept: null
+    accept: null,
+    ttl: 0,
+    acl: "public-read",
+    properties: null,
+    tags: null,
+    "content-disposition": null
   };
 
   _defauktKeys = (function() {
@@ -529,12 +562,12 @@
   MediaApiClient = (function(_super) {
     __extends(MediaApiClient, _super);
 
-    MediaApiClient.prototype.version = "0.2.0";
+    MediaApiClient.prototype.version = "0.3.0";
 
     MediaApiClient.prototype._rgxHost = /https?:\/\/[^\/$\s]+/i;
 
     function MediaApiClient(drag, elresults, options) {
-      var _html, _htmlData, _inpAccept, _mxcnt, _mxsz, _opt, _ref, _ref1, _ref2, _ref3;
+      var _html, _htmlData, _inpAccept, _mxcnt, _mxsz, _opt, _ref, _ref1, _ref2, _ref3, _ref4;
       if (options == null) {
         options = {};
       }
@@ -577,7 +610,7 @@
       this.options = jQuery.extend({}, _defaults, _htmlData, options || {});
       if (!((_ref = this.options.host) != null ? _ref.length : void 0)) {
         this._error(null, "missing-host");
-        retur;
+        return;
       }
       if (!this._rgxHost.test(this.options.host)) {
         this._error(null, "invalid-host");
@@ -614,10 +647,36 @@
         this._error(null, "invalid-requestSignfn");
         return;
       }
+      if ((this.options.ttl != null) && !isInt(this.options.ttl)) {
+        this._error(null, "invalid-ttl");
+        return;
+      } else if (this.options.ttl != null) {
+        this.options.ttl = parseInt(this.options.ttl, 10);
+        if (isNaN(this.options.ttl)) {
+          this._error(null, "invalid-ttl");
+          return;
+        }
+      }
+      if ((this.options.tags != null) && !isArray(this.options.tags)) {
+        this._error(null, "invalid-tags");
+        return;
+      }
+      if ((this.options.properties != null) && !isObject(this.options.properties)) {
+        this._error(null, "invalid-properties");
+        return;
+      }
+      if ((this.options["content-disposition"] != null) && !isString(this.options["content-disposition"])) {
+        this._error(null, "invalid-content-disposition");
+        return;
+      }
+      if ((this.options.acl != null) && !isString(this.options.acl) && ((_ref3 = this.options.acl) !== "public-read" && _ref3 !== "authenticated-read")) {
+        this._error(null, "invalid-acl");
+        return;
+      }
       _inpAccept = this.$sel.attr("accept");
       if ((this.options.accept != null) || (_inpAccept != null)) {
         _html = (_inpAccept != null ? _inpAccept.split(",") : void 0) || [];
-        _opt = ((_ref3 = this.options.accept) != null ? _ref3.split(",") : void 0) || [];
+        _opt = ((_ref4 = this.options.accept) != null ? _ref4.split(",") : void 0) || [];
         if (_html != null ? _html.length : void 0) {
           this.options.accept = _html;
         } else if (_opt != null ? _opt.length : void 0) {
@@ -840,7 +899,12 @@
       "invalid-host": "Invalid host. You have to defien a host as url starting with `http://` or `https://`.",
       "missing-domain": "Missing domain. You have to define a domain.",
       "missing-accesskey": "Missing accesskey. You have to define a accesskey.",
-      "missing-keyprefix": "Missing keyprefix. You have to define a keyprefix."
+      "missing-keyprefix": "Missing keyprefix. You have to define a keyprefix.",
+      "invalid-ttl": "for the option `ttl` only a positiv number is allowed",
+      "invalid-tags": "for the option `tags` only an array is allowed",
+      "invalid-properties": "for the option `properties` only an object is allowed",
+      "invalid-content-disposition": "for the option `content-disposition` only an string like: `attachment; filename=friendly_filename.pdf` is allowed",
+      "invalid-acl": "the option acl only accepts the string `public-read` or `authenticated-read`"
     };
 
     return MediaApiClient;

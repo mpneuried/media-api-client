@@ -1,3 +1,16 @@
+isArray = ( vr )->
+	return Object.prototype.toString.call( vr ) is '[object Array]'
+
+isObject = ( vr )->
+	return vr isnt null and typeof vr is 'object'
+
+isString = ( vr )->
+	return typeof vr is 'string' or vr instanceof String
+
+_intRegex = /^\d+$/;
+isInt = ( vr )->
+	return _intRegex.test( vr )
+
 class EventEmitter
 	on: (name, listener) ->
 		listeners = (@_eventListeners ?= {})[name] ?= []
@@ -155,13 +168,18 @@ class File extends Base
 		@url = @options.host + @options.domain + "/" + @key
 		@json = 
 			blob: true
-			acl: "public-read"
+			acl: @options.acl
+			ttl: @options.ttl
 			properties: 
 				filename: _name
 
+		@json.tags = @options.tags if @options.tags?
+		@json.properties = @options.properties if @options.properties?
+		@json[ "content-disposition" ] = @options[ "content-disposition" ] if @options[ "content-disposition" ]?
+
 		@json.content_type = _content_type if _content_type?.length
 
-		@options.requestSignFn.call @, @url, @key, @json, ( err, signature )=>
+		@options.requestSignFn.call @, @options.domain, @options.accesskey, @url, @key, @json, ( err, signature )=>
 			if err
 				@error = err
 				@_setState( 7 )
@@ -224,8 +242,8 @@ class File extends Base
 			@emit( "progress", @getProgress(), evnt )
 			return
 
-	_defaultRequestSignature: ( madiaapiurl, key, json, cb )=>
-		_url = @options.host + @options.domain + "/sign/" + @options.accesskey
+	_defaultRequestSignature: ( domain, accesskey, madiaapiurl, key, json, cb )=>
+		_url = @options.host + domain + "/sign/" + accesskey
 		_data = 
 			url: madiaapiurl
 			key: key
@@ -379,6 +397,11 @@ _defaults =
 	maxsize: 0
 	maxcount: 0
 	accept: null
+	ttl: 0
+	acl: "public-read"
+	properties: null
+	tags: null
+	"content-disposition": null
 
 _defauktKeys = for _k, _v of _defaults
 	_k
@@ -420,16 +443,20 @@ class MediaApiClient extends Base
 
 		if not @options.host?.length
 			@_error( null, "missing-host" )
-			retur
+			return
+
 		if not @_rgxHost.test( @options.host )
 			@_error( null, "invalid-host" )
 			return
+
 		if not @options.domain?.length
 			@_error( null, "missing-domain" )
 			return
+
 		if not @options.accesskey?.length
 			@_error( null, "missing-accesskey" )
 			return
+
 		if @options.maxcount?
 			_mxcnt = parseInt( @options.maxcount, 10 )
 			if isNaN( _mxcnt )
@@ -446,8 +473,34 @@ class MediaApiClient extends Base
 				@options.maxsize = _defaults.maxsize
 			else
 				@options.maxsize = _mxsz
+
 		if @options.requestSignFn? and typeof @options.requestSignFn isnt "function"
 			@_error( null, "invalid-requestSignfn" )
+			return
+
+		if @options.ttl? and not isInt( @options.ttl )
+			@_error( null, "invalid-ttl" )
+			return
+		else if @options.ttl?
+			@options.ttl = parseInt( @options.ttl, 10 )
+			if isNaN( @options.ttl )
+				@_error( null, "invalid-ttl" )
+				return
+
+		if @options.tags? and not isArray( @options.tags )
+			@_error( null, "invalid-tags" )
+			return
+
+		if @options.properties? and not isObject( @options.properties )
+			@_error( null, "invalid-properties" )
+			return
+
+		if @options[ "content-disposition" ]? and not isString( @options[ "content-disposition" ] )
+			@_error( null, "invalid-content-disposition" )
+			return
+
+		if @options.acl? and not isString( @options.acl ) and @options.acl not in [ "public-read", "authenticated-read" ]
+			@_error( null, "invalid-acl" )
 			return
 
 		_inpAccept = @$sel.attr( "accept" )
@@ -630,6 +683,13 @@ class MediaApiClient extends Base
 		"missing-domain": "Missing domain. You have to define a domain."
 		"missing-accesskey": "Missing accesskey. You have to define a accesskey."
 		"missing-keyprefix": "Missing keyprefix. You have to define a keyprefix."
+		"invalid-ttl": "for the option `ttl` only a positiv number is allowed"
+		"invalid-tags": "for the option `tags` only an array is allowed"
+		"invalid-properties": "for the option `properties` only an object is allowed"
+		"invalid-content-disposition": "for the option `content-disposition` only an string like: `attachment; filename=friendly_filename.pdf` is allowed"
+		"invalid-acl": "the option acl only accepts the string `public-read` or `authenticated-read`"
+		
+
 
 MediaApiClient.EventEmitter = EventEmitter
 MediaApiClient.Base = Base

@@ -14,14 +14,24 @@ To install the client just place the script `build/mediaapiclient.js` or `build/
 Then init it by calling:
 
 ```
-new window.MediaApiClient( dragSelector, [ resultsSelector, ] options );
+new window.MediaApiClient( dragSelector, resultsSelector, options );
 ```
 
 #### Examples
 
+**With internal GUI**
+
 ```
 new window.MediaApiClient( "#clientEl", "#results", { host: "@@host", domain: "@@domain", accesskey: "@@accesskey" } );
 ```
+
+**No File Object GUI**
+
+```
+new window.MediaApiClient( "#clientEl", { host: "@@host", domain: "@@domain", accesskey: "@@accesskey" } );
+```
+
+**Predefine the defaults**
 
 ```
 window.MediaApiClient.defaults( { host: "@@host", domain: "@@domain", accesskey: "@@accesskey" } )
@@ -30,24 +40,29 @@ new window.MediaApiClient( "#clientEl", "#results" )
 new window.MediaApiClient( "#clientEl2" )
 ```
 
-**Note:** You have to replace the placeholders beginning with `@@`
+**Note:** You have to replace the placeholders prefixed with `@@`
 
 #### Arguments
 
 Options can be used as JS options or data attributes. Expect the function options
 
 * **dragSelector** ( `String|DOM|jQuery-Obj`, **required** ): A selector, dom-element or jQuery object conntaining the drag space. Within this element a file input element ( optional selector `options.inputclass` ) needs to be found.
-* **resultsSelector** ( `String|DOM|jQuery-Obj` ): Optional selector to show a file rendering with status bar. But you can also do this your own by listening to the events.
+* **resultsSelector** ( `null|String|DOM|jQuery-Obj` ): Optional selector to show a file rendering with status bar. But you can also do this your own by listening to the events. If you set this to `null` the client acts in non-GUI mode and you have to listen to the events.
 * **options.host** ( `String`, **required** ): The media Api host
 * **options.domain** ( `String`, **required** ): The domain to upload to
 * **options.accesskey** ( `String`, **required** ): The domains access key 
 * **options.maxsize** ( `Number`, *default `0`* ): Maximum size of a file. `0` means no restriction.
-* **options.maxcount** ( `Number`, *default `0`*  ): Maximum count of files. `0` means no restriction.
+* **options.maxcount** ( `Number`, *default `0`* ): Maximum count of files. `0` means no restriction.
+* **options.ttl** ( `Number`, *default `0`* ): File ttl to invalidate file after `n` seconds. `0` means forever.
+* **options.tags** ( `Array` ): File tags to add to the media-api object.
+* **options.properties** ( `Object`, *default `{ filename: "{FileApi.name}" }`* ): Property object to add to the media-api object
+* **options.content-disposition** ( `String` ): the content disposition e.g. `attachment; filename=friendly_filename.pdf`
+* **options.acl** ( `String`, *default `public-read`; enum:( `public-read`, `authenticated-read` )* ): The S3 access control.
 * **options.inputclass** ( `String` ): Optional css class to find the file input
 * **options.accept** ( `String` ): Mimetyps to accept.
 * **options.keyprefix** ( `String` *default `clientupload`* ): Key prefix 
 * **options.autostart** ( `Boolean`, *default `true`* ): Start upload on drop/change
-* **options.requestSignFn** ( `Function` ): Function to generate the signature
+* **options.requestSignFn** ( `Function` ): Function to generate the signature. This Method should be redefined by you, because the standard Media-API signing will be IP filtered. So you have to tunnel it trough your own server or generate a valid signature within your server. For details see the `Signing` section. 
 * **options.resultTemplateFn** ( `Function` ): Template Fucntion to display the File state.
 
 #### Defaults
@@ -89,6 +104,106 @@ With internal File object rendering.
 <label id="clientEl"for="clientElselect">
 	<input type="file" id="clientElselect" name="clientEl" />
 </label>
+```
+
+## Signing
+
+You have to do the signing your own, because the sign endpoint of the media-api will be restricted to a list of ip's.
+The upload itself will be done directly to the Media-API.
+
+To realize this you have to overwrite the function `option.requestSignFn` and add some serverside code.
+
+### Clientside
+
+You have to redefine the `option.requestSignFn` to request your own server to be abele to create the signature within your own server.
+
+The following example shows a possible solution with a call to the server taht generates the signature itself:
+
+```
+	myRequestSignFn = function( domain, accesskey, madiaapiurl, key, json, cb ){
+		var mySignUrl, postData, postReq;
+		var mySignUrl = "http://www.myservice.com/sign-media-api";
+
+		var postData = {
+			url: madiaapiurl,
+			key: key,
+			json: JSON.stringify( json )
+		};
+
+		var postReq = jQuery.post( mySignUrl, postData, null, "text" );
+		
+		postReq.done( function( signature ){
+			cb( null, signature )
+		} );
+
+		postReq.error( function( error ){
+			cb( error )
+		} );
+	}	
+```
+
+### Serverside 
+
+There are two variants to do the signing.
+
+#### Use the Media-API Sign Endpoint
+
+After your server has been added to the secure ip list, you can use the media-api sign *( `/mediaapi/{domain}/sign/{accesskey}` )* endpoint.
+
+	POST /mediaapi/{domain}/sign/{accesskey}
+
+**URL-Parameter**
+
+* **domain** *( `String` )*: Your target domain *( passed to `option.requestSignFn` function )*
+* **url** *( `String` )*: The domain/bucket accesskey *( passed to `option.requestSignFn` function )*
+
+**Form-Parameter**
+
+* **json** *( `String` )*: A stringified JSON of the relevant media-api parameters *( passed to `option.requestSignFn` function )*
+* **key** *( `String` )*: The media-api object key *( passed to `option.requestSignFn` function )*
+* **url** *( `String` )*: The media-api request url you want to call *( passed to `option.requestSignFn` function )*
+
+You will get a simple text response with the signature
+
+**Example:**
+
+*Request:*
+
+	POST /mediaapi/mydomain/sign/123456789
+	Content-Type: application/x-www-form-urlencoded
+
+	json = {"blob":true,"acl":"public-read","content_type":"image/jpeg"}
+	key = clientupload_rxv450jpg_1402487116_1	
+	url	= http://192.168.1.8:8005/mediaapi/mediaapitest/clientupload_rxv450jpg_1402487116_1
+
+*Response:*
+
+	123456789ABCEFGHIJo9ZFeQ6ds=
+
+#### Generate the signature yourself
+
+To generate the signature your own you have to send the `json` and `madiaapiurl` passed to the `option.requestSignFn` function to your server. Therefor you have to know the domain/bucket secret within your server.
+
+The signature itself has to be generated like the following js-code example:
+
+```
+	generateSignature = function( domainSecretKey, url, stringifiedJSON ){
+		var stringToHash, shasum;
+		
+		// add the stringified JSON to the url if exsitend
+		if( stringifiedJSON != undefined and stringifiedJSON.length >= 0 ){
+			stringToHash = url + stringifiedJSON;
+		} else {
+			stringToHash = url;
+		}
+		
+		// create a SHA1 hash with the domain/bucket secret
+		shasum = crypto.createHmac( "sha1", domainSecretKey );
+		shasum.update( stringToHash );
+		
+		// create the base64 encoded signature 
+		return shasum.digest('base64');
+	};
 ```
 
 ## Client Object `MediaApiClient`
@@ -274,16 +389,15 @@ File upload invalid
 File error
 * `error` *( Error )*: the error object
 
-
 ## OPEN Features
 
-[ ] Cancel / Start / Stop buttons per file
-[ ] Start / Cancel / Stop all button
+[ ] Cancel / Start / Stop buttons per file  
+[ ] Start / Cancel / Stop all button  
 
 ## Release History
 |Version|Date|Description|
 |:--:|:--:|:--|
-|v0.2.1|2014-06-11|Added details docs and some code optimisations|
+|v0.3.0|2014-06-11|Added media api arguments like `tags`, `properties`, `acl` and `content-disposition`; Added details docs and some code optimisations|
 |v0.2.0|2014-06-10|Gui less version|
 |v0.1.0|2014-06-09|Initial version|
 |v0.0.0|2014-06-09|Dev version|
