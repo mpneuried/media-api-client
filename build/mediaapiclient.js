@@ -103,15 +103,16 @@
       this._upload = __bind(this._upload, this);
       this._sign = __bind(this._sign, this);
       this._now = __bind(this._now, this);
-      this.start = __bind(this.start, this);
+      this._testMime = __bind(this._testMime, this);
+      this._validate = __bind(this._validate, this);
+      this._setState = __bind(this._setState, this);
+      this.getData = __bind(this.getData, this);
       this.getType = __bind(this.getType, this);
       this.getName = __bind(this.getName, this);
       this.getProgress = __bind(this.getProgress, this);
       this.getResult = __bind(this.getResult, this);
-      this.testMime = __bind(this.testMime, this);
-      this.validate = __bind(this.validate, this);
       this.getState = __bind(this.getState, this);
-      this.setState = __bind(this.setState, this);
+      this.start = __bind(this.start, this);
       File.__super__.constructor.apply(this, arguments);
       this.state = 0;
       this.validation = [];
@@ -127,52 +128,24 @@
       if (this.options.autostart == null) {
         this.options.autostart = true;
       }
-      this.validate();
+      this._validate();
       if (this.options.autostart) {
         this.emit("start");
       }
       return;
     }
 
-    File.prototype.setState = function(state) {
-      if (state > this.state) {
-        this.state = state;
-        this.emit("state", state);
+    File.prototype.start = function() {
+      if (this.state <= 0) {
+        this._setState(1);
+        this.client.emit("file.upload", this);
+        this._sign();
       }
-      return state;
+      return this;
     };
 
     File.prototype.getState = function() {
       return this.states[this.state];
-    };
-
-    File.prototype.validate = function() {
-      var _ref, _size;
-      _size = this.file.size / 1024;
-      if (this.options.maxsize > 0 && this.options.maxsize < _size) {
-        this.validation.push("maxsize");
-      }
-      if (((_ref = this.options.acceptRules) != null ? _ref.length : void 0) && !this.testMime(this.options.acceptRules)) {
-        this.validation.push("accept");
-      }
-      if (this.validation.length) {
-        this.setState(6);
-        this.emit("invalid", this.validation);
-        this.client.emit("file.invalid", this, this.validation);
-        return false;
-      }
-      return true;
-    };
-
-    File.prototype.testMime = function(acceptRules) {
-      var _i, _len, _rule;
-      for (_i = 0, _len = acceptRules.length; _i < _len; _i++) {
-        _rule = acceptRules[_i];
-        if (_rule(this.file)) {
-          return true;
-        }
-      }
-      return false;
     };
 
     File.prototype.getResult = function() {
@@ -214,12 +187,57 @@
       return this.file.type;
     };
 
-    File.prototype.start = function() {
-      if (this.state <= 0) {
-        this.setState(1);
-        this.client.emit("file.upload", this);
-        this._sign();
+    File.prototype.getData = function() {
+      var _ret;
+      _ret = {
+        name: this.client.formname,
+        filename: this.getName(),
+        idx: this.idx,
+        state: this.getState(),
+        progress: this.getProgress(),
+        result: this.getResult(),
+        options: this.options,
+        invalid_reason: this.validation,
+        error: this.error
+      };
+      return _ret;
+    };
+
+    File.prototype._setState = function(state) {
+      if (state > this.state) {
+        this.state = state;
+        this.emit("state", state);
       }
+      return state;
+    };
+
+    File.prototype._validate = function() {
+      var _ref, _size;
+      _size = this.file.size / 1024;
+      if (this.options.maxsize > 0 && this.options.maxsize < _size) {
+        this.validation.push("maxsize");
+      }
+      if (((_ref = this.options.acceptRules) != null ? _ref.length : void 0) && !this._testMime(this.options.acceptRules)) {
+        this.validation.push("accept");
+      }
+      if (this.validation.length) {
+        this._setState(6);
+        this.emit("invalid", this.validation);
+        this.client.emit("file.invalid", this, this.validation);
+        return false;
+      }
+      return true;
+    };
+
+    File.prototype._testMime = function(acceptRules) {
+      var _i, _len, _rule;
+      for (_i = 0, _len = acceptRules.length; _i < _len; _i++) {
+        _rule = acceptRules[_i];
+        if (_rule(this.file)) {
+          return true;
+        }
+      }
+      return false;
     };
 
     File.prototype._now = function() {
@@ -251,7 +269,7 @@
         return function(err, signature) {
           if (err) {
             _this.error = err;
-            _this.setState(7);
+            _this._setState(7);
             _this.emit("error", err);
             _this.client.emit("file.error", _this, err);
             return;
@@ -262,7 +280,7 @@
             _this.url += "?";
           }
           _this.url += "signature=" + encodeURIComponent(signature);
-          _this.setState(2);
+          _this._setState(2);
           _this.emit("signed");
         };
       })(this));
@@ -274,7 +292,7 @@
       if (this.state > 2) {
         return;
       }
-      this.setState(3);
+      this._setState(3);
       data = new FormData();
       data.append("JSON", JSON.stringify(this.json));
       data.append("blob", this.file);
@@ -289,14 +307,14 @@
           return function(resp) {
             _this.data = resp != null ? resp.rows[0] : void 0;
             _this.progressState = 1;
-            _this.setState(5);
+            _this._setState(5);
             _this.emit("done", _this.data);
             _this.client.emit("file.done", _this);
           };
         })(this),
         error: (function(_this) {
           return function(err) {
-            _this.setState(7);
+            _this._setState(7);
             _this.progressState = 0;
             _this.error = err;
             _this.emit("error", err);
@@ -321,8 +339,8 @@
       return (function(_this) {
         return function(evnt) {
           _this.progressState = evnt.loaded / evnt.total;
-          _this.setState(4);
-          _this.emit("progress", evnt);
+          _this._setState(4);
+          _this.emit("progress", _this.getProgress(), evnt);
         };
       })(this);
     };
@@ -373,7 +391,7 @@
   		console.log "_upload fallback", @state, @idx
   		if @state > 2
   			return
-  		@setState( 3 )
+  		@_setState( 3 )
   		data = new FormData()
   		data.append( "JSON", JSON.stringify( @json ) )
   		data.append( "blob", @file )
@@ -388,12 +406,12 @@
   			success: ( resp )=>
   				@data = resp?.rows[ 0 ]
   				@progressState = 1
-  				@setState( 5 )
+  				@_setState( 5 )
   				@emit( "done", @data )
   				@client.emit( "file.done", @ )
   				return
   			error: ( err )=>
-  				@setState( 7 )
+  				@_setState( 7 )
   				@progressState = 0
   				@error = err
   				@emit( "error", err )
@@ -415,7 +433,6 @@
       this.client = client;
       this.options = options;
       this._defaultTemplate = __bind(this._defaultTemplate, this);
-      this.templateData = __bind(this.templateData, this);
       this.update = __bind(this.update, this);
       this.render = __bind(this.render, this);
       FileView.__super__.constructor.apply(this, arguments);
@@ -432,31 +449,16 @@
     }
 
     FileView.prototype.render = function() {
-      this.$el = jQuery("<div class=\"col-sm-6 col-md-4 file\"></div>").html(this.template(this.templateData()));
+      this.$el = jQuery("<div class=\"col-sm-6 col-md-4 file\"></div>").html(this.template(this.fileObj.getData()));
       return this.$el;
     };
 
     FileView.prototype.update = function() {
       return (function(_this) {
         return function(evnt) {
-          _this.$el.html(_this.template(_this.templateData()));
+          _this.$el.html(_this.template(_this.fileObj.getData()));
         };
       })(this);
-    };
-
-    FileView.prototype.templateData = function() {
-      var _ret;
-      return _ret = {
-        name: this.client.formname,
-        filename: this.fileObj.getName(),
-        idx: this.fileObj.idx,
-        state: this.fileObj.getState(),
-        progress: this.fileObj.getProgress(),
-        result: this.fileObj.getResult(),
-        options: this.fileObj.options,
-        invalid_reason: this.fileObj.validation,
-        error: this.fileObj.error
-      };
     };
 
     FileView.prototype._defaultTemplate = function(data) {
@@ -527,7 +529,7 @@
   MediaApiClient = (function(_super) {
     __extends(MediaApiClient, _super);
 
-    MediaApiClient.prototype.version = "0.1.0";
+    MediaApiClient.prototype.version = "0.2.0";
 
     MediaApiClient.prototype._rgxHost = /https?:\/\/[^\/$\s]+/i;
 
@@ -844,6 +846,8 @@
     return MediaApiClient;
 
   })(Base);
+
+  MediaApiClient.EventEmitter = EventEmitter;
 
   MediaApiClient.Base = Base;
 

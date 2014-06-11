@@ -62,41 +62,21 @@ class File extends Base
 		if not @options.autostart?
 			@options.autostart = true
 
-		@validate()
+		@_validate()
 
 		if @options.autostart
 			@emit "start"
 		return
 
-	setState: ( state )=>
-		if state > @state
-			@state = state
-			@emit( "state", state )
-		return state
+	start: =>
+		if @state <= 0
+			@_setState( 1 )
+			@client.emit( "file.upload", @ )
+			@_sign()
+		return @
 
 	getState: =>
 		return @states[ @state ]
-
-	validate: =>
-		_size = @file.size / 1024
-		if @options.maxsize > 0 and @options.maxsize < _size
-			@validation.push "maxsize"
-
-		if @options.acceptRules?.length and not @testMime( @options.acceptRules )
-			@validation.push "accept"
-
-		if @validation.length
-			@setState( 6 )
-			@emit( "invalid", @validation )
-			@client.emit( "file.invalid", @, @validation )
-			return false
-		return true
-
-	testMime: ( acceptRules )=>
-		for _rule in acceptRules
-			if _rule( @file )
-				return true
-		return false
 
 	getResult: =>
 		if @state is 5 and @data?
@@ -122,12 +102,45 @@ class File extends Base
 	getType: =>
 		return @file.type
 
-	start: =>
-		if @state <= 0
-			@setState( 1 )
-			@client.emit( "file.upload", @ )
-			@_sign()
-		return
+	getData: =>
+		_ret = 
+			name: @client.formname
+			filename: @getName()
+			idx: @idx
+			state: @getState()
+			progress: @getProgress()
+			result: @getResult()
+			options: @options
+			invalid_reason: @validation
+			error: @error
+		return _ret
+
+	_setState: ( state )=>
+		if state > @state
+			@state = state
+			@emit( "state", state )
+		return state
+
+	_validate: =>
+		_size = @file.size / 1024
+		if @options.maxsize > 0 and @options.maxsize < _size
+			@validation.push "maxsize"
+
+		if @options.acceptRules?.length and not @_testMime( @options.acceptRules )
+			@validation.push "accept"
+
+		if @validation.length
+			@_setState( 6 )
+			@emit( "invalid", @validation )
+			@client.emit( "file.invalid", @, @validation )
+			return false
+		return true
+
+	_testMime: ( acceptRules )=>
+		for _rule in acceptRules
+			if _rule( @file )
+				return true
+		return false
 
 	_now: =>
 		return Math.round( Date.now() / 1000 )
@@ -151,7 +164,7 @@ class File extends Base
 		@options.requestSignFn.call @, @url, @key, @json, ( err, signature )=>
 			if err
 				@error = err
-				@setState( 7 )
+				@_setState( 7 )
 				@emit( "error", err )
 				@client.emit( "file.error", @, err )
 				return
@@ -162,7 +175,7 @@ class File extends Base
 				@url += "?"
 			@url += ( "signature=" + encodeURIComponent( signature ) )
 
-			@setState( 2 )
+			@_setState( 2 )
 			@emit( "signed" )
 			return
 		return
@@ -171,7 +184,7 @@ class File extends Base
 		console.log "_upload", @state, @idx
 		if @state > 2
 			return
-		@setState( 3 )
+		@_setState( 3 )
 		data = new FormData()
 		data.append( "JSON", JSON.stringify( @json ) )
 		data.append( "blob", @file )
@@ -186,12 +199,12 @@ class File extends Base
 			success: ( resp )=>
 				@data = resp?.rows[ 0 ]
 				@progressState = 1
-				@setState( 5 )
+				@_setState( 5 )
 				@emit( "done", @data )
 				@client.emit( "file.done", @ )
 				return
 			error: ( err )=>
-				@setState( 7 )
+				@_setState( 7 )
 				@progressState = 0
 				@error = err
 				@emit( "error", err )
@@ -207,8 +220,8 @@ class File extends Base
 	_handleProgress: =>
 		return ( evnt )=>
 			@progressState = evnt.loaded/evnt.total
-			@setState( 4 )
-			@emit( "progress", evnt )
+			@_setState( 4 )
+			@emit( "progress", @getProgress(), evnt )
 			return
 
 	_defaultRequestSignature: ( madiaapiurl, key, json, cb )=>
@@ -248,7 +261,7 @@ class FileFallback extends File
 		console.log "_upload fallback", @state, @idx
 		if @state > 2
 			return
-		@setState( 3 )
+		@_setState( 3 )
 		data = new FormData()
 		data.append( "JSON", JSON.stringify( @json ) )
 		data.append( "blob", @file )
@@ -263,12 +276,12 @@ class FileFallback extends File
 			success: ( resp )=>
 				@data = resp?.rows[ 0 ]
 				@progressState = 1
-				@setState( 5 )
+				@_setState( 5 )
 				@emit( "done", @data )
 				@client.emit( "file.done", @ )
 				return
 			error: ( err )=>
-				@setState( 7 )
+				@_setState( 7 )
 				@progressState = 0
 				@error = err
 				@emit( "error", err )
@@ -298,25 +311,13 @@ class FileView extends Base
 		return
 
 	render: =>
-		@$el = jQuery( "<div class=\"col-sm-6 col-md-4 file\"></div>" ).html( @template( @templateData() ) )
+		@$el = jQuery( "<div class=\"col-sm-6 col-md-4 file\"></div>" ).html( @template( @fileObj.getData() ) )
 		return @$el
 
 	update: =>
 		return ( evnt )=>
-			@$el.html( @template( @templateData() ) )
+			@$el.html( @template( @fileObj.getData() ) )
 			return 
-
-	templateData: =>
-		_ret = 
-			name: @client.formname
-			filename: @fileObj.getName()
-			idx: @fileObj.idx
-			state: @fileObj.getState()
-			progress: @fileObj.getProgress()
-			result: @fileObj.getResult()
-			options: @fileObj.options
-			invalid_reason: @fileObj.validation
-			error: @fileObj.error
 
 	_defaultTemplate: ( data )=>
 		_html = """
@@ -630,6 +631,7 @@ class MediaApiClient extends Base
 		"missing-accesskey": "Missing accesskey. You have to define a accesskey."
 		"missing-keyprefix": "Missing keyprefix. You have to define a keyprefix."
 
+MediaApiClient.EventEmitter = EventEmitter
 MediaApiClient.Base = Base
 MediaApiClient.File = File
 MediaApiClient.FileView = FileView
