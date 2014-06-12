@@ -397,7 +397,7 @@ File error
 ## Release History
 |Version|Date|Description|
 |:--:|:--:|:--|
-|v0.3.0|2014-06-11|Added media api arguments like `tags`, `properties`, `acl` and `content-disposition`; Added details docs and some code optimisations|
+|v0.3.0|2014-06-11|Added media api arguments like `ttl`, `tags`, `properties`, `acl` and `content-disposition`; Added details docs and some code optimisations|
 |v0.2.0|2014-06-10|Gui less version|
 |v0.1.0|2014-06-09|Initial version|
 |v0.0.0|2014-06-09|Dev version|
