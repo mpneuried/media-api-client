@@ -108,7 +108,7 @@
   File = (function(_super) {
     __extends(File, _super);
 
-    File.prototype.states = ["new", "start", "signed", "upload", "progress", "done", "invalid", "error"];
+    File.prototype.states = ["new", "start", "signed", "upload", "progress", "done", "invalid", "error", "aborted"];
 
     function File(file, idx, client, options) {
       var _ref;
@@ -130,11 +130,13 @@
       this.getProgress = __bind(this.getProgress, this);
       this.getResult = __bind(this.getResult, this);
       this.getState = __bind(this.getState, this);
+      this.abort = __bind(this.abort, this);
       this.start = __bind(this.start, this);
       File.__super__.constructor.apply(this, arguments);
       this.state = 0;
       this.validation = [];
       this.client.emit("file.new", this);
+      this.client.on("abortAll", this.abort);
       this.on("start", this.start);
       this.on("signed", this._upload);
       if (this.options.requestSignFn == null) {
@@ -158,6 +160,19 @@
         this._setState(1);
         this.client.emit("file.upload", this);
         this._sign();
+      }
+      return this;
+    };
+
+    File.prototype.abort = function() {
+      var _ref;
+      if (this.state <= 4) {
+        this._setState(8);
+        if ((_ref = this.requestUpload) != null) {
+          _ref.abort();
+        }
+        this.emit("aborted");
+        this.client.emit("file.aborted", this);
       }
       return this;
     };
@@ -224,7 +239,7 @@
     File.prototype._setState = function(state) {
       if (state > this.state) {
         this.state = state;
-        this.emit("state", state);
+        this.emit("state", this.getState());
       }
       return state;
     };
@@ -293,6 +308,8 @@
       if (_content_type != null ? _content_type.length : void 0) {
         this.json.content_type = _content_type;
       }
+      this.emit("content", this.key, this.json);
+      this.client.emit("file.content", this, this.key, this.json);
       this.options.requestSignFn.call(this, this.options.domain, this.options.accesskey, this.url, this.key, this.json, (function(_this) {
         return function(err, signature) {
           if (err) {
@@ -316,7 +333,6 @@
 
     File.prototype._upload = function() {
       var data;
-      console.log("_upload", this.state, this.idx);
       if (this.state > 2) {
         return;
       }
@@ -324,7 +340,7 @@
       data = new FormData();
       data.append("JSON", JSON.stringify(this.json));
       data.append("blob", this.file);
-      jQuery.ajax({
+      this.requestUpload = jQuery.ajax({
         url: this.url,
         type: "POST",
         cache: false,
@@ -374,28 +390,21 @@
     };
 
     File.prototype._defaultRequestSignature = function(domain, accesskey, madiaapiurl, key, json, cb) {
-      var _data, _error, _req, _success, _url;
+      var _data, _req, _url;
       _url = this.options.host + domain + "/sign/" + accesskey;
       _data = {
         url: madiaapiurl,
         key: key,
         json: JSON.stringify(json)
       };
-      _success = (function(_this) {
-        return function(signature) {
-          console.log("RETURN", arguments);
-          cb(null, signature);
-        };
-      })(this);
-      _error = (function(_this) {
-        return function(err) {
-          console.log("AJAX ERROR", arguments);
-          cb(err);
-        };
-      })(this);
       _req = jQuery.post(_url, _data, null, "text");
-      _req.done(_success);
-      _req.error(_error);
+      _req.done(function(signature) {
+        cb(null, signature);
+      });
+      _req.error(function(err) {
+        console.error("get sign error", err);
+        cb(err);
+      });
     };
 
     return File;
@@ -416,7 +425,6 @@
   		return null
   
   	_upload: =>
-  		console.log "_upload fallback", @state, @idx
   		if @state > 2
   			return
   		@_setState( 3 )
@@ -439,7 +447,7 @@
   				@client.emit( "file.done", @ )
   				return
   			error: ( err )=>
-  				@_setState( 7 )
+  				@_setState( 8 )
   				@progressState = 0
   				@error = err
   				@emit( "error", err )
@@ -522,6 +530,9 @@
           break;
         case "error":
           _html += "<div class=\"alert alert-error\">An Error occured.</div>";
+          break;
+        case "aborted":
+          _html += "<div class=\"alert alert-error\">Upload aborted.</div>";
       }
       _html += "</div>";
       return _html;
@@ -562,12 +573,12 @@
   MediaApiClient = (function(_super) {
     __extends(MediaApiClient, _super);
 
-    MediaApiClient.prototype.version = "0.3.0";
+    MediaApiClient.prototype.version = "0.4.0";
 
     MediaApiClient.prototype._rgxHost = /https?:\/\/[^\/$\s]+/i;
 
     function MediaApiClient(drag, elresults, options) {
-      var _html, _htmlData, _inpAccept, _mxcnt, _mxsz, _opt, _ref, _ref1, _ref2, _ref3, _ref4;
+      var _html, _htmlData, _i, _inpAccept, _len, _mxcnt, _mxsz, _opt, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _tag;
       if (options == null) {
         options = {};
       }
@@ -579,6 +590,7 @@
       this.fileDone = __bind(this.fileDone, this);
       this.enable = __bind(this.enable, this);
       this.disable = __bind(this.disable, this);
+      this.abortAll = __bind(this.abortAll, this);
       this.upload = __bind(this.upload, this);
       this.onLeave = __bind(this.onLeave, this);
       this.onOver = __bind(this.onOver, this);
@@ -594,6 +606,7 @@
       this.on("file.done", this.fileDone);
       this.on("file.error", this.fileError);
       this.on("file.invalid", this.fileError);
+      this.on("file.aborted", this.fileError);
       this.on("finish", this.onFinish);
       this.within_enter = false;
       this.$el = this._validateEl(drag, "drag");
@@ -657,7 +670,17 @@
           return;
         }
       }
-      if ((this.options.tags != null) && !isArray(this.options.tags)) {
+      if ((this.options.tags != null) && isArray(this.options.tags)) {
+        _ref3 = this.options.tags;
+        for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
+          _tag = _ref3[_i];
+          if (!(!isString(_tag))) {
+            continue;
+          }
+          this._error(null, "invalid-tags");
+          return;
+        }
+      } else if (this.options.tags != null) {
         this._error(null, "invalid-tags");
         return;
       }
@@ -669,14 +692,14 @@
         this._error(null, "invalid-content-disposition");
         return;
       }
-      if ((this.options.acl != null) && !isString(this.options.acl) && ((_ref3 = this.options.acl) !== "public-read" && _ref3 !== "authenticated-read")) {
+      if ((this.options.acl != null) && !isString(this.options.acl) && ((_ref4 = this.options.acl) !== "public-read" && _ref4 !== "authenticated-read")) {
         this._error(null, "invalid-acl");
         return;
       }
       _inpAccept = this.$sel.attr("accept");
       if ((this.options.accept != null) || (_inpAccept != null)) {
         _html = (_inpAccept != null ? _inpAccept.split(",") : void 0) || [];
-        _opt = ((_ref4 = this.options.accept) != null ? _ref4.split(",") : void 0) || [];
+        _opt = ((_ref5 = this.options.accept) != null ? _ref5.split(",") : void 0) || [];
         if (_html != null ? _html.length : void 0) {
           this.options.accept = _html;
         } else if (_opt != null ? _opt.length : void 0) {
@@ -820,6 +843,10 @@
       }
     };
 
+    MediaApiClient.prototype.abortAll = function() {
+      this.emit("abortAll");
+    };
+
     MediaApiClient.prototype.disable = function() {
       this.$sel.attr("disabled", "disabled");
       this.$el.addClass("disabled");
@@ -845,7 +872,6 @@
 
     MediaApiClient.prototype.fileNew = function(file) {
       var _fileview;
-      console.log("fileNew", this.formname, file, file.constructor.name);
       if (this.$res != null) {
         _fileview = new MediaApiClient.FileView(file, this, this.options);
         this.$res.append(_fileview.render());
@@ -901,7 +927,7 @@
       "missing-accesskey": "Missing accesskey. You have to define a accesskey.",
       "missing-keyprefix": "Missing keyprefix. You have to define a keyprefix.",
       "invalid-ttl": "for the option `ttl` only a positiv number is allowed",
-      "invalid-tags": "for the option `tags` only an array is allowed",
+      "invalid-tags": "for the option `tags` only an array of strings is allowed",
       "invalid-properties": "for the option `properties` only an object is allowed",
       "invalid-content-disposition": "for the option `content-disposition` only an string like: `attachment; filename=friendly_filename.pdf` is allowed",
       "invalid-acl": "the option acl only accepts the string `public-read` or `authenticated-read`"

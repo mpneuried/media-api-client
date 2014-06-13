@@ -55,13 +55,14 @@ class Base extends EventEmitter
 
 class File extends Base
 
-	states: [ "new", "start", "signed", "upload", "progress", "done", "invalid", "error" ]
+	states: [ "new", "start", "signed", "upload", "progress", "done", "invalid", "error", "aborted" ]
 
 	constructor: ( @file, @idx, @client, @options )->
 		super
 		@state = 0
 		@validation = []
 		@client.emit( "file.new", @ )
+		@client.on "abortAll", @abort
 
 		@on( "start", @start )
 		@on( "signed", @_upload )
@@ -83,11 +84,19 @@ class File extends Base
 
 	start: =>
 		if @state <= 0
-			@_setState( 1 )
+			@_setState( 1 )	
 			@client.emit( "file.upload", @ )
 			@_sign()
 		return @
-
+	
+	abort: =>
+		if @state <= 4
+			@_setState( 8 )
+			@requestUpload?.abort()
+			@emit "aborted"
+			@client.emit( "file.aborted", @ )
+		return @
+	
 	getState: =>
 		return @states[ @state ]
 
@@ -131,7 +140,7 @@ class File extends Base
 	_setState: ( state )=>
 		if state > @state
 			@state = state
-			@emit( "state", state )
+			@emit( "state", @getState() )
 		return state
 
 	_validate: =>
@@ -179,6 +188,9 @@ class File extends Base
 
 		@json.content_type = _content_type if _content_type?.length
 
+		@emit( "content", @key, @json ) 
+		@client.emit( "file.content", @, @key, @json )
+
 		@options.requestSignFn.call @, @options.domain, @options.accesskey, @url, @key, @json, ( err, signature )=>
 			if err
 				@error = err
@@ -199,7 +211,6 @@ class File extends Base
 		return
 
 	_upload: =>
-		console.log "_upload", @state, @idx
 		if @state > 2
 			return
 		@_setState( 3 )
@@ -207,7 +218,7 @@ class File extends Base
 		data.append( "JSON", JSON.stringify( @json ) )
 		data.append( "blob", @file )
 		
-		jQuery.ajax 
+		@requestUpload = jQuery.ajax 
 			url: @url
 			type: "POST"
 			cache: false
@@ -248,18 +259,16 @@ class File extends Base
 			url: madiaapiurl
 			key: key
 			json: JSON.stringify( json )
-		_success = ( signature )=>
-				console.log "RETURN", arguments
-				cb( null, signature )
-				return
-		_error = ( err )=>
-				console.log "AJAX ERROR", arguments
-				cb( err )
-				return 
 
 		_req = jQuery.post( _url, _data, null, "text" )
-		_req.done _success
-		_req.error _error
+
+		_req.done ( signature )->
+			cb( null, signature )
+			return
+		_req.error ( err )->
+			console.error "get sign error", err
+			cb( err )
+			return 
 			
 		return
 
@@ -276,7 +285,6 @@ class FileFallback extends File
 		return null
 
 	_upload: =>
-		console.log "_upload fallback", @state, @idx
 		if @state > 2
 			return
 		@_setState( 3 )
@@ -299,7 +307,7 @@ class FileFallback extends File
 				@client.emit( "file.done", @ )
 				return
 			error: ( err )=>
-				@_setState( 7 )
+				@_setState( 8 )
 				@progressState = 0
 				@error = err
 				@emit( "error", err )
@@ -381,6 +389,9 @@ class FileView extends Base
 			when "error"
 				_html += "<div class=\"alert alert-error\">An Error occured.</div>"
 
+			when "aborted"
+				_html += "<div class=\"alert alert-error\">Upload aborted.</div>"
+
 		_html += """
 	</div>
 		"""
@@ -422,6 +433,7 @@ class MediaApiClient extends Base
 		@on( "file.done", @fileDone )
 		@on( "file.error", @fileError )
 		@on( "file.invalid", @fileError )
+		@on( "file.aborted", @fileError )
 		@on( "finish", @onFinish )
 		@within_enter = false
 
@@ -487,7 +499,11 @@ class MediaApiClient extends Base
 				@_error( null, "invalid-ttl" )
 				return
 
-		if @options.tags? and not isArray( @options.tags )
+		if @options.tags? and isArray( @options.tags )
+			for _tag in @options.tags when not isString( _tag )
+				@_error( null, "invalid-tags" )
+				return
+		else if @options.tags?
 			@_error( null, "invalid-tags" )
 			return
 
@@ -610,6 +626,10 @@ class MediaApiClient extends Base
 					@disable()
 		return
 
+	abortAll: =>
+		@emit "abortAll"
+		return
+
 	disable: =>
 		@$sel.attr( "disabled", "disabled" )
 		@$el.addClass( "disabled" )
@@ -634,7 +654,6 @@ class MediaApiClient extends Base
 		return
 
 	fileNew: ( file )=>
-		console.log "fileNew", @formname, file, file.constructor.name
 		if @$res?
 			_fileview = new MediaApiClient.FileView( file, @, @options )
 			@$res.append( _fileview.render() )	
@@ -684,7 +703,7 @@ class MediaApiClient extends Base
 		"missing-accesskey": "Missing accesskey. You have to define a accesskey."
 		"missing-keyprefix": "Missing keyprefix. You have to define a keyprefix."
 		"invalid-ttl": "for the option `ttl` only a positiv number is allowed"
-		"invalid-tags": "for the option `tags` only an array is allowed"
+		"invalid-tags": "for the option `tags` only an array of strings is allowed"
 		"invalid-properties": "for the option `properties` only an object is allowed"
 		"invalid-content-disposition": "for the option `content-disposition` only an string like: `attachment; filename=friendly_filename.pdf` is allowed"
 		"invalid-acl": "the option acl only accepts the string `public-read` or `authenticated-read`"

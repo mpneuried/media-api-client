@@ -235,6 +235,10 @@ Disable the client. This will stop the Client from accepting new files
 
 Enable the client.
 
+#### `MediaApiClient.abortAll()`
+
+Abort all file uploads
+
 ### CSS
 
 The drag element will offer it's current state by some css Calsses added or removed.
@@ -252,12 +256,29 @@ All currently running uploads are done.
 New file dropped/selected.
 * `file` *( File )*: The file object 
 
+**`file.content`** *( file, key, json )*: 
+Event to hook a data manipulation. So you are able to change the object's key and json data before signing and uploading
+* `file` *( File )*: The file object 
+* `key` *( String )*: The generated key
+* `json` *( Object )*: The media-api json data
+	* `json.blob` *( Boolean )*: **Do not manipulate this!** Flag to define a regular file upload
+	* `json.acl` *( `String`, *default `public-read`; enum:( `public-read`, `authenticated-read` )*: The S3 access control.
+	* `json.ttl` *( `Number`, *default `0`)*: File ttl to invalidate file after `n` seconds. `0` means forever.
+	* `json.properties` *( Object )*: Optional properties object 
+	* `json.tags` *( Array )*: An Array of Strings to set object tags. The Media-API can query by this tags.
+	* `json.content_type` *( String )*: The files content type read by the browser file API
+	* `json.content-disposition` *( String )*: the content disposition e.g. `attachment; filename=friendly_filename.pdf`
+
 **`file.upload`** *( file )*: 
 File upload started
 * `file` *( File )*: The file object 
 
 **`file.done`** *( file )*: 
 File upload done
+* `file` *( File )*: The file object
+
+**`file.aborted`** *( file )*: 
+File upload aborted
 * `file` *( File )*: The file object
 
 **`file.invalid`** *( file, validation )*: 
@@ -276,7 +297,7 @@ For every dropped/selected File a FileObject is generated witch initializes the 
 
 ### Methods
 
-#### `MediaApiClient.start()`
+#### `FileInstance.start()`
 
 Start the upload of a file. Only relevant ist `options.autostart` is set to `false`
 
@@ -284,31 +305,23 @@ Start the upload of a file. Only relevant ist `options.autostart` is set to `fal
 
 *( `File-Obj` )*: Itself
 
-#### `MediaApiClient.stop()` **Not implemented yet**
+#### `FileInstance.abort()` **Not implemented yet**
 
-Stop the signing/upload of a file
-
-**Returns**
-
-*( `File-Obj` )*: Itself
-
-#### `MediaApiClient.cancel()` **Not implemented yet**
-
-destroy the file
+Abort the signing/upload of a file
 
 **Returns**
 
 *( `File-Obj` )*: Itself
 
-#### `MediaApiClient.getState()`
+#### `FileInstance.getState()`
 
-Returns the current state ( `new`, `start`, `signed`, `upload`, `progress`, `done`, `invalid`, `error` )
+Returns the current state ( `new`, `start`, `signed`, `upload`, `progress`, `done`, `aborted`, `invalid`, `error` )
 
 **Returns**
 
 *( `String` )*: Current State
 
-#### `MediaApiClient.getResult()`
+#### `FileInstance.getResult()`
 
 The the Fileresult or `null` until it's not done.
 
@@ -316,7 +329,7 @@ The the Fileresult or `null` until it's not done.
 
 *( `null|Object` )*: Returns `null` if file not done yet. Otherwise it retruned a result object ( `url`: The Url to the final file; `hash`: The filehash; `key`: The generated file key; `type`: The file mimetype ).
 
-#### `MediaApiClient.getProgress( asFactor )`
+#### `FileInstance.getProgress( asFactor )`
 
 Returns the current file progress state.
 
@@ -328,7 +341,7 @@ Returns the current file progress state.
 
 *( `Number` )*: The factor or precentage
 
-#### `MediaApiClient.getName()`
+#### `FileInstance.getName()`
 
 Returns the file name.
 
@@ -337,7 +350,7 @@ Returns the file name.
 *( `String` )*: The file name
 
 
-#### `MediaApiClient.getType()`
+#### `FileInstance.getType()`
 
 Returns the file type.
 
@@ -345,7 +358,7 @@ Returns the file type.
 
 *( `String` )*: The file type
 
-#### `MediaApiClient.getData()`
+#### `FileInstance.getData()`
 
 Returns a object of all current data ( e.g. for rendering ).
 
@@ -370,6 +383,18 @@ File upload started
 New file dropped/selected.
 * `state` *( String )*: The current file state ( `new`, `start`, `signed`, `upload`, `progress`, `done`, `invalid`, `error` )
 
+**`content`** *( key, json )*: 
+Event to hook a data manipulation. So you are able to change the object's key and json data before signing and uploading
+* `key` *( String )*: The generated key
+* `json` *( Object )*: The media-api json data
+	* `json.blob` *( Boolean )*: **Do not manipulate this!** Flag to define a regular file upload
+	* `json.acl` *( `String`, *default `public-read`; enum:( `public-read`, `authenticated-read` )*: The S3 access control.
+	* `json.ttl` *( `Number`, *default `0`)*: File ttl to invalidate file after `n` seconds. `0` means forever.
+	* `json.properties` *( Object )*: Optional properties object 
+	* `json.tags` *( Array )*: An Array of Strings to set object tags. The Media-API can query by this tags.
+	* `json.content_type` *( String )*: The files content type read by the browser file API
+	* `json.content-disposition` *( String )*: the content disposition e.g. `attachment; filename=friendly_filename.pdf`
+
 **`signed`** *()*: 
 File has been signed
 
@@ -381,22 +406,27 @@ File error
 **`done`** *()*: 
 File upload done
 
+**`aborted`** *()*: 
+File upload aborted
+
 **`invalid`** *( validation )*: 
 File upload invalid
 * `validation` *( Array )*: Array of invalid keys ( `maxsize`: File too big; `accept`: invalid type ) 
 
-**`error`** *(  error )*: 
+**`error`** *( error )*: 
 File error
 * `error` *( Error )*: the error object
 
 ## OPEN Features
 
 [ ] Cancel / Start / Stop buttons per file  
-[ ] Start / Cancel / Stop all button  
+[ ] Start / Cancel / Stop all files 
+[ ] check for console.logs 
 
 ## Release History
 |Version|Date|Description|
 |:--:|:--:|:--|
+|v0.4.0|2014-06-13|Added file `abort`; client `abortAll`; Added event hook `content` and `file.content` to manipulate the key and json data|
 |v0.3.0|2014-06-11|Added media api arguments like `ttl`, `tags`, `properties`, `acl` and `content-disposition`; Added details docs and some code optimisations|
 |v0.2.0|2014-06-10|Gui less version|
 |v0.1.0|2014-06-09|Initial version|
