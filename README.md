@@ -305,7 +305,7 @@ Start the upload of a file. Only relevant ist `options.autostart` is set to `fal
 
 *( `File-Obj` )*: Itself
 
-#### `FileInstance.abort()` **Not implemented yet**
+#### `FileInstance.abort()`
 
 Abort the signing/upload of a file
 
