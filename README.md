@@ -430,6 +430,10 @@ File error
 |v0.1.0|2014-06-09|Initial version|
 |v0.0.0|2014-06-09|Dev version|
 
+## Related Projects
+|Name|Description|
+|:--|:--|
+|[**media-api**](https://github.com/smrchy/media-api)|The media api server|
 
 ## The MIT License (MIT)
 
