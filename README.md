@@ -65,24 +65,6 @@ Options can be used as JS options or data attributes. Expect the function option
 * **options.requestSignFn** ( `Function` ): Function to generate the signature. This Method should be redefined by you, because the standard Media-API signing will be IP filtered. So you have to tunnel it trough your own server or generate a valid signature within your server. For details see the `Signing` section. 
 * **options.resultTemplateFn** ( `Function` ): Template Fucntion to display the File state.
 
-## Defaults
-
-It's possible to predefine all options by using the `MediaApiClient.defaults()` method.
-
-Usually you would use it to store the options `host`, `domain` and `accesskey` for all client instances.
-But it's possible to overwrite it with the options or html-data-attributes for every instance.
-
-## Components
-
-You can write your own sub components like:
-
-* `MediaApiClient.EventEmitter`: Internal event emitter.
-* `MediaApiClient.Base`: Basic class with general error handling.
-* `MediaApiClient.File`: Handling of a single file upload.
-* `MediaApiClient.FileView`: File rendering to show the process.
-
-by replacing and/or extend them.
-
 ### HTML Structure
 
 **complete:**
@@ -105,6 +87,24 @@ With internal File object rendering.
 	<input type="file" id="clientElselect" name="clientEl" />
 </label>
 ```
+
+## Defaults
+
+It's possible to predefine all options by using the `MediaApiClient.defaults()` method.
+
+Usually you would use it to store the options `host`, `domain` and `accesskey` for all client instances.
+But it's possible to overwrite it with the options or html-data-attributes for every instance.
+
+## Components
+
+You can write your own sub components like:
+
+* `MediaApiClient.EventEmitter`: Internal event emitter.
+* `MediaApiClient.Base`: Basic class with general error handling.
+* `MediaApiClient.File`: Handling of a single file upload.
+* `MediaApiClient.FileView`: File rendering to show the process.
+
+by replacing and/or extend them.
 
 ## Signing
 
