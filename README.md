@@ -419,9 +419,7 @@ File error
 
 ## OPEN Features
 
-[ ] Cancel / Start / Stop buttons per file  
-[ ] Start / Cancel / Stop all files 
-[ ] check for console.logs 
+> currently no features are planed. Please create a issue if you need a new feature.
 
 ## Release History
 |Version|Date|Description|
