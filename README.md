@@ -65,14 +65,14 @@ Options can be used as JS options or data attributes. Expect the function option
 * **options.requestSignFn** ( `Function` ): Function to generate the signature. This Method should be redefined by you, because the standard Media-API signing will be IP filtered. So you have to tunnel it trough your own server or generate a valid signature within your server. For details see the `Signing` section. 
 * **options.resultTemplateFn** ( `Function` ): Template Fucntion to display the File state.
 
-#### Defaults
+## Defaults
 
 It's possible to predefine all options by using the `MediaApiClient.defaults()` method.
 
 Usually you would use it to store the options `host`, `domain` and `accesskey` for all client instances.
 But it's possible to overwrite it with the options or html-data-attributes for every instance.
 
-#### Components
+## Components
 
 You can write your own sub components like:
 
@@ -206,7 +206,7 @@ The signature itself has to be generated like the following js-code example:
 	};
 ```
 
-## Client Object `MediaApiClient`
+## Client Object `ClientInstance = new MediaApiClient()`
 
 The Client to start and init uploads
 
@@ -219,7 +219,7 @@ myClient = jQuery( "#clientEl" ).data( "mediaapiclient" )
 
 ### Methods
 
-#### `MediaApiClient.upload( files )`
+#### `ClientInstance.upload( files )`
 
 Start the upload manually. 
  
@@ -227,15 +227,15 @@ Start the upload manually.
 
 * `files` : *( `FileAPI-Object[]` )*: An array of file API objects.
 
-#### `MediaApiClient.disable()`
+#### `ClientInstance.disable()`
 
 Disable the client. This will stop the Client from accepting new files
 
-#### `MediaApiClient.enable()`
+#### `ClientInstance.enable()`
 
 Enable the client.
 
-#### `MediaApiClient.abortAll()`
+#### `ClientInstance.abortAll()`
 
 Abort all file uploads
 
@@ -291,7 +291,7 @@ File error
 * `file` *( File )*: The file object 
 * `error` *( Error )*: the error object
 
-## File Object
+## File Object `FileInstance = new File()`
 
 For every dropped/selected File a FileObject is generated witch initializes the signing and upload.
 
