@@ -439,6 +439,7 @@ class MediaApiClient extends Base
 
 
 		@$el = @_validateEl( drag, "drag" )
+		@el = @$el.get( 0 )
 		@$sel = @$el.find( "input#{ options.inputclass or "" }[type='file']" )
 		if not @$sel.length
 			@_error( null, "missing-select-el" )
@@ -558,7 +559,7 @@ class MediaApiClient extends Base
 
 	initialize: =>
 		if window.File and window.FileList and window.FileReader
-			@$sel.on( "change", @onSelect() )
+			@$sel.on( "change", @onSelect )
 			@useFileAPI = true
 			@initFileAPI()
 					
@@ -568,17 +569,21 @@ class MediaApiClient extends Base
 	initFileAPI: =>
 		xhr = new XMLHttpRequest()
 		if xhr?.upload
-			@$el.on( "dragover", @onHover() )
-			@$el.on( "dragover", @onOver() )
-			@$el.on( "dragleave", @onLeave() )
-			@$el.on( "drop", @onSelect() )
+			@$el.on( "dragover", @onHover )
+			@$el.on( "dragover", @onOver )
+			@$el.on( "dragleave", @onLeave )
+			@$el.on( "drop", @onSelect )
+			# @el.ondragover = @onHover
+			# @el.ondragover = @onOver
+			# @el.ondragleave = @onLeave
+			# @el.ondrop = @onSelect
 			@$el.addClass( "droppable" )
 		else
 		return
 
-	onSelect: =>
-		return ( evnt )=>
+	onSelect: ( evnt )=>
 			evnt.preventDefault()
+			@$sel.replaceWith( @$sel = @$sel.clone( true ) )
 			if not @enabled
 				return
 			if @options.maxcount <= 0 or @idx_started < @options.maxcount
@@ -591,8 +596,8 @@ class MediaApiClient extends Base
 				@disable()
 			return
 
-	onHover: =>
-		return ( evnt )=>
+	onHover: ( evnt )=>
+			console.log "hover"
 			evnt.preventDefault()
 			if not @enabled
 				return
@@ -601,15 +606,13 @@ class MediaApiClient extends Base
 			@$el.addClass( "hover" )
 			return
 
-	onOver: =>
-		return ( evnt )=>
+	onOver: ( evnt )=>
 			evnt.preventDefault()
 			if not @enabled
 				return
 			return
 
-	onLeave: =>
-		return ( evnt )=>
+	onLeave: ( evnt )=>
 			if not @enabled
 				return
 			if not @within_enter

@@ -573,7 +573,7 @@
   MediaApiClient = (function(_super) {
     __extends(MediaApiClient, _super);
 
-    MediaApiClient.prototype.version = "0.4.1";
+    MediaApiClient.prototype.version = "0.4.2";
 
     MediaApiClient.prototype._rgxHost = /https?:\/\/[^\/$\s]+/i;
 
@@ -610,6 +610,7 @@
       this.on("finish", this.onFinish);
       this.within_enter = false;
       this.$el = this._validateEl(drag, "drag");
+      this.el = this.$el.get(0);
       this.$sel = this.$el.find("input" + (options.inputclass || "") + "[type='file']");
       if (!this.$sel.length) {
         this._error(null, "missing-select-el");
@@ -746,7 +747,7 @@
 
     MediaApiClient.prototype.initialize = function() {
       if (window.File && window.FileList && window.FileReader) {
-        this.$sel.on("change", this.onSelect());
+        this.$sel.on("change", this.onSelect);
         this.useFileAPI = true;
         this.initFileAPI();
       }
@@ -756,74 +757,62 @@
       var xhr;
       xhr = new XMLHttpRequest();
       if (xhr != null ? xhr.upload : void 0) {
-        this.$el.on("dragover", this.onHover());
-        this.$el.on("dragover", this.onOver());
-        this.$el.on("dragleave", this.onLeave());
-        this.$el.on("drop", this.onSelect());
+        this.$el.on("dragover", this.onHover);
+        this.$el.on("dragover", this.onOver);
+        this.$el.on("dragleave", this.onLeave);
+        this.$el.on("drop", this.onSelect);
         this.$el.addClass("droppable");
       } else {
 
       }
     };
 
-    MediaApiClient.prototype.onSelect = function() {
-      return (function(_this) {
-        return function(evnt) {
-          var files, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
-          evnt.preventDefault();
-          if (!_this.enabled) {
-            return;
-          }
-          if (_this.options.maxcount <= 0 || _this.idx_started < _this.options.maxcount) {
-            _this.$el.removeClass("hover").addClass("process");
-            files = ((_ref = evnt.target) != null ? _ref.files : void 0) || ((_ref1 = evnt.originalEvent) != null ? (_ref2 = _ref1.target) != null ? _ref2.files : void 0 : void 0) || ((_ref3 = evnt.dataTransfer) != null ? _ref3.files : void 0) || ((_ref4 = evnt.originalEvent) != null ? (_ref5 = _ref4.dataTransfer) != null ? _ref5.files : void 0 : void 0);
-            _this.upload(files);
-          } else {
-            _this.$el.removeClass("hover");
-            _this.disable();
-          }
-        };
-      })(this);
+    MediaApiClient.prototype.onSelect = function(evnt) {
+      var files, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
+      evnt.preventDefault();
+      this.$sel.replaceWith(this.$sel = this.$sel.clone(true));
+      if (!this.enabled) {
+        return;
+      }
+      if (this.options.maxcount <= 0 || this.idx_started < this.options.maxcount) {
+        this.$el.removeClass("hover").addClass("process");
+        files = ((_ref = evnt.target) != null ? _ref.files : void 0) || ((_ref1 = evnt.originalEvent) != null ? (_ref2 = _ref1.target) != null ? _ref2.files : void 0 : void 0) || ((_ref3 = evnt.dataTransfer) != null ? _ref3.files : void 0) || ((_ref4 = evnt.originalEvent) != null ? (_ref5 = _ref4.dataTransfer) != null ? _ref5.files : void 0 : void 0);
+        this.upload(files);
+      } else {
+        this.$el.removeClass("hover");
+        this.disable();
+      }
     };
 
-    MediaApiClient.prototype.onHover = function() {
-      return (function(_this) {
-        return function(evnt) {
-          evnt.preventDefault();
-          if (!_this.enabled) {
-            return;
-          }
-          _this.within_enter = true;
-          setTimeout((function() {
-            return _this.within_enter = false;
-          }), 0);
-          _this.$el.addClass("hover");
+    MediaApiClient.prototype.onHover = function(evnt) {
+      console.log("hover");
+      evnt.preventDefault();
+      if (!this.enabled) {
+        return;
+      }
+      this.within_enter = true;
+      setTimeout(((function(_this) {
+        return function() {
+          return _this.within_enter = false;
         };
-      })(this);
+      })(this)), 0);
+      this.$el.addClass("hover");
     };
 
-    MediaApiClient.prototype.onOver = function() {
-      return (function(_this) {
-        return function(evnt) {
-          evnt.preventDefault();
-          if (!_this.enabled) {
-            return;
-          }
-        };
-      })(this);
+    MediaApiClient.prototype.onOver = function(evnt) {
+      evnt.preventDefault();
+      if (!this.enabled) {
+        return;
+      }
     };
 
-    MediaApiClient.prototype.onLeave = function() {
-      return (function(_this) {
-        return function(evnt) {
-          if (!_this.enabled) {
-            return;
-          }
-          if (!_this.within_enter) {
-            _this.$el.removeClass("hover");
-          }
-        };
-      })(this);
+    MediaApiClient.prototype.onLeave = function(evnt) {
+      if (!this.enabled) {
+        return;
+      }
+      if (!this.within_enter) {
+        this.$el.removeClass("hover");
+      }
     };
 
     MediaApiClient.prototype.upload = function(files) {
