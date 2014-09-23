@@ -426,6 +426,7 @@ File error
 ## Release History
 |Version|Date|Description|
 |:--:|:--:|:--|
+|v0.4.3|2014-09-23|some small fixed and optimized read me.|
 |v0.4.2|2014-09-16|fixed multiple upload of same file.|
 |v0.4.1|2014-06-13|Optimized readme|
 |v0.4.0|2014-06-13|Added file `abort`; client `abortAll`; Added event hook `content` and `file.content` to manipulate the key and json data|
