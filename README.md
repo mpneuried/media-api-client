@@ -390,6 +390,8 @@ Event to hook a data manipulation. So you are able to change the object's key an
 	* `json.blob` *( Boolean )*: **Do not manipulate this!** Flag to define a regular file upload
 	* `json.acl` *( `String`, *default `public-read`; enum:( `public-read`, `authenticated-read` )*: The S3 access control.
 	* `json.ttl` *( `Number`, *default `0`)*: File ttl to invalidate file after `n` seconds. `0` means forever.
+	* `json.width` *( `Number`, *default `0`)*: Recalc a image to this width. If you define width and height the image could be disorted. If you only define width `> 0` the resizing will preserve the aspect ratio.
+	* `json.height` *( `Number`, *default `0`)*:  Recalc a image to this height. If you define width and height the image could be disorted. If you only define height `> 0` the resizing will preserve the aspect ratio.
 	* `json.properties` *( Object )*: Optional properties object 
 	* `json.tags` *( Array )*: An Array of Strings to set object tags. The Media-API can query by this tags.
 	* `json.content_type` *( String )*: The files content type read by the browser file API

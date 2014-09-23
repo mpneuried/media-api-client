@@ -24,8 +24,8 @@ jQuery( ->
 		if file.idx is 3
 			file.on "progress", ->
 				console.log "Abort", @idx
-				#file.abort()
-				clientStd.abortAll()
+				file.abort()
+				#clientStd.abortAll()
 				return
 
 		if file.idx is 2

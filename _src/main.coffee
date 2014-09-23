@@ -61,6 +61,9 @@ class File extends Base
 		super
 		@state = 0
 		@validation = []
+
+		@key = @options.keyprefix + "_" + @getName().replace( @_rgxFile2Key, "" ) + "_" + @_now() + "_" + @idx
+
 		@client.emit( "file.new", @ )
 		@client.on "abortAll", @abort
 
@@ -173,7 +176,6 @@ class File extends Base
 		_content_type = @getType()
 		if @state > 1
 			return
-		@key = @options.keyprefix + "_" + _name.replace( @_rgxFile2Key, "" ) + "_" + @_now() + "_" + @idx
 		@url = @options.host + @options.domain + "/" + @key
 		@json = 
 			blob: true
@@ -569,14 +571,14 @@ class MediaApiClient extends Base
 	initFileAPI: =>
 		xhr = new XMLHttpRequest()
 		if xhr?.upload
-			@$el.on( "dragover", @onHover )
-			@$el.on( "dragover", @onOver )
-			@$el.on( "dragleave", @onLeave )
-			@$el.on( "drop", @onSelect )
-			# @el.ondragover = @onHover
-			# @el.ondragover = @onOver
-			# @el.ondragleave = @onLeave
-			# @el.ondrop = @onSelect
+			# @$el.on( "dragover", @onHover )
+			# @$el.on( "dragover", @onOver )
+			# @$el.on( "dragleave", @onLeave )
+			# @$el.on( "drop", @onSelect )
+			@el.ondragover = @onHover
+			#@el.ondragover = @onOver
+			@el.ondragleave = @onLeave
+			@el.ondrop = @onSelect
 			@$el.addClass( "droppable" )
 		else
 		return

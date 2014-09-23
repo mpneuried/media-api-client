@@ -135,6 +135,7 @@
       File.__super__.constructor.apply(this, arguments);
       this.state = 0;
       this.validation = [];
+      this.key = this.options.keyprefix + "_" + this.getName().replace(this._rgxFile2Key, "") + "_" + this._now() + "_" + this.idx;
       this.client.emit("file.new", this);
       this.client.on("abortAll", this.abort);
       this.on("start", this.start);
@@ -286,7 +287,6 @@
       if (this.state > 1) {
         return;
       }
-      this.key = this.options.keyprefix + "_" + _name.replace(this._rgxFile2Key, "") + "_" + this._now() + "_" + this.idx;
       this.url = this.options.host + this.options.domain + "/" + this.key;
       this.json = {
         blob: true,
@@ -573,7 +573,7 @@
   MediaApiClient = (function(_super) {
     __extends(MediaApiClient, _super);
 
-    MediaApiClient.prototype.version = "0.4.2";
+    MediaApiClient.prototype.version = "0.4.3";
 
     MediaApiClient.prototype._rgxHost = /https?:\/\/[^\/$\s]+/i;
 
@@ -757,10 +757,9 @@
       var xhr;
       xhr = new XMLHttpRequest();
       if (xhr != null ? xhr.upload : void 0) {
-        this.$el.on("dragover", this.onHover);
-        this.$el.on("dragover", this.onOver);
-        this.$el.on("dragleave", this.onLeave);
-        this.$el.on("drop", this.onSelect);
+        this.el.ondragover = this.onHover;
+        this.el.ondragleave = this.onLeave;
+        this.el.ondrop = this.onSelect;
         this.$el.addClass("droppable");
       } else {
 

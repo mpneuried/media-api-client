@@ -1,4 +1,4 @@
 /*
-Media-API Client (0.4.2)
+Media-API Client (0.4.3)
 */
 .mediaapiclient{display:block;border:1px dashed #555;-webkit-border-radius:2px;border-radius:2px;cursor:default;position:relative;margin:5px 0}.mediaapiclient .dropinfo{font-weight:700;text-align:center;padding:20px;color:#555}.mediaapiclient .dropactive{display:none}.mediaapiclient .dropfallback{display:block}.mediaapiclient input{visibility:hidden;position:absolute;left:-5000px}.mediaapiclient .file .state-error{background-color:rgba(255,0,0,.25);color:red}.mediaapiclient .file .state-aborted{background-color:rgba(255,165,0,.25);color:orange}.mediaapiclient.droppable .dropactive{display:block}.mediaapiclient.droppable .dropfallback{display:none}.mediaapiclient.disabled{opacity:.3;-ms-filter:"alpha(Opacity=30)";filter:alpha(opacity=30)}.mediaapiclient.hover{color:#00f;border-color:#00f;border-style:solid;background-color:rgba(0,0,255,.1)}.mediaapiclient.process{opacity:1;-ms-filter:none;filter:none;color:#0ff;border-color:#0ff;border-style:solid}
