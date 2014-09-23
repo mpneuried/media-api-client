@@ -790,7 +790,6 @@
     };
 
     MediaApiClient.prototype.onHover = function(evnt) {
-      console.log("hover");
       evnt.preventDefault();
       if (!this.enabled) {
         return;

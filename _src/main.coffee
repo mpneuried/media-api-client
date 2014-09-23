@@ -587,42 +587,41 @@ class MediaApiClient extends Base
 		return
 
 	onSelect: ( evnt )=>
-			evnt.preventDefault()
-			@$sel.replaceWith( @$sel = @$sel.clone( true ) )
-			if not @enabled
-				return
-			if @options.maxcount <= 0 or @idx_started < @options.maxcount
-				@$el.removeClass( "hover" ).addClass( "process" )
-
-				files = evnt.target?.files or evnt.originalEvent?.target?.files or evnt.dataTransfer?.files or evnt.originalEvent?.dataTransfer?.files
-				@upload( files )
-			else
-				@$el.removeClass( "hover" )
-				@disable()
+		evnt.preventDefault()
+		@$sel.replaceWith( @$sel = @$sel.clone( true ) )
+		if not @enabled
 			return
+		if @options.maxcount <= 0 or @idx_started < @options.maxcount
+			@$el.removeClass( "hover" ).addClass( "process" )
+
+			files = evnt.target?.files or evnt.originalEvent?.target?.files or evnt.dataTransfer?.files or evnt.originalEvent?.dataTransfer?.files
+			@upload( files )
+		else
+			@$el.removeClass( "hover" )
+			@disable()
+		return
 
 	onHover: ( evnt )=>
-			console.log "hover"
-			evnt.preventDefault()
-			if not @enabled
-				return
-			@within_enter = true
-			setTimeout( ( => @within_enter = false ), 0)
-			@$el.addClass( "hover" )
+		evnt.preventDefault()
+		if not @enabled
 			return
+		@within_enter = true
+		setTimeout( ( => @within_enter = false ), 0)
+		@$el.addClass( "hover" )
+		return
 
 	onOver: ( evnt )=>
-			evnt.preventDefault()
-			if not @enabled
-				return
+		evnt.preventDefault()
+		if not @enabled
 			return
+		return
 
 	onLeave: ( evnt )=>
-			if not @enabled
-				return
-			if not @within_enter
-				@$el.removeClass( "hover" )
+		if not @enabled
 			return
+		if not @within_enter
+			@$el.removeClass( "hover" )
+		return
 
 	upload: ( files )=>
 		if @useFileAPI
