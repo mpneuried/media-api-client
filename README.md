@@ -46,7 +46,7 @@ new window.MediaApiClient( "#clientEl2" )
 
 Options can be used as JS options or data attributes. Expect the function options
 
-* **dragSelector** ( `String|DOM|jQuery-Obj`, **required** ): A selector, dom-element or jQuery object conntaining the drag space. Within this element a file input element ( optional selector `options.inputclass` ) needs to be found.
+* **dragSelector** ( `String|DOM|jQuery-Obj`, **required** ): A selector, dom-element or jQuery object containing the drag space. Within this element a file input element ( optional selector `options.inputclass` ) needs to be found.
 * **resultsSelector** ( `null|String|DOM|jQuery-Obj` ): Optional selector to show a file rendering with status bar. But you can also do this your own by listening to the events. If you set this to `null` the client acts in non-GUI mode and you have to listen to the events.
 * **options.host** ( `String`, **required** ): The media Api host
 * **options.domain** ( `String`, **required** ): The domain to upload to
@@ -65,7 +65,11 @@ Options can be used as JS options or data attributes. Expect the function option
 * **options.keyprefix** ( `String` *default `clientupload`* ): Key prefix 
 * **options.autostart** ( `Boolean`, *default `true`* ): Start upload on drop/change
 * **options.requestSignFn** ( `Function` ): Function to generate the signature. This Method should be redefined by you, because the standard Media-API signing will be IP filtered. So you have to tunnel it trough your own server or generate a valid signature within your server. For details see the `Signing` section. 
-* **options.resultTemplateFn** ( `Function` ): Template Fucntion to display the File state.
+* **options.resultTemplateFn** ( `Function` ): Template function to display the File state.
+* **options.cssdroppable** ( `String` *default `dropable`* ): Css class added  to `dragSelector` on successful drag'n'drop init 
+* **options.csshover** ( `String` *default `hover`* ): Css class added to `dragSelector` on hover with a file drag
+* **options.cssprocess** ( `String` *default `process`* ): Css class added to `dragSelector`  during a active upload
+* **options.cssdisabled** ( `String` *default `disabled`* ): Css class added to `dragSelector` if the `maxcount` has exceeded
 
 ### HTML Structure
 
@@ -113,13 +117,13 @@ by replacing and/or extend them.
 You have to do the signing your own, because the sign endpoint of the media-api will be restricted to a list of ip's.
 The upload itself will be done directly to the Media-API.
 
-To realize this you have to overwrite the function `option.requestSignFn` and add some serverside code.
+To realize this you have to overwrite the function `option.requestSignFn` and add some server side code.
 
 ### Clientside
 
 You have to redefine the `option.requestSignFn` to request your own server to be abele to create the signature within your own server.
 
-The following example shows a possible solution with a call to the server taht generates the signature itself:
+The following example shows a possible solution with a call to the server that generates the signature itself:
 
 ```
 	myRequestSignFn = function( domain, accesskey, madiaapiurl, key, json, cb ){
@@ -243,7 +247,7 @@ Abort all file uploads
 
 ### CSS
 
-The drag element will offer it's current state by some css Calsses added or removed.
+The drag element will offer it's current state by some css classes added or removed.
 
 * **`hover`**: Detected a Fiel Drag'n'Drop hover over the `dragSelector` element.
 * **`process`**: Files are currently uploading.
@@ -259,7 +263,7 @@ New file dropped/selected.
 * `file` *( File )*: The file object 
 
 **`file.content`** *( file, key, json )*: 
-Event to hook a data manipulation. So you are able to change the object's key and json data before signing and uploading
+Event to hook a data manipulation. So you are able to change the object's key and JSON data before signing and uploading
 * `file` *( File )*: The file object 
 * `key` *( String )*: The generated key
 * `json` *( Object )*: The media-api json data
@@ -331,7 +335,7 @@ The the Fileresult or `null` until it's not done.
 
 **Returns**
 
-*( `null|Object` )*: Returns `null` if file not done yet. Otherwise it retruned a result object ( `url`: The Url to the final file; `hash`: The filehash; `key`: The generated file key; `type`: The file mimetype ).
+*( `null|Object` )*: Returns `null` if file not done yet. Otherwise it returned a result object ( `url`: The Url to the final file; `hash`: The filehash; `key`: The generated file key; `type`: The file mimetype ).
 
 #### `FileInstance.getProgress( asFactor )`
 
@@ -339,11 +343,11 @@ Returns the current file progress state.
 
 **Arguments**
 
-* `asFactor` : *( `Boolean` default = `false` )*: Return the progress as factor from `0` to `1`. Otherwise it will return a precentage from `0` to `100`
+* `asFactor` : *( `Boolean` default = `false` )*: Return the progress as factor from `0` to `1`. Otherwise it will return a percentage from `0` to `100`
 
 **Returns**
 
-*( `Number` )*: The factor or precentage
+*( `Number` )*: The factor or percentage
 
 #### `FileInstance.getName()`
 
@@ -388,7 +392,7 @@ New file dropped/selected.
 * `state` *( String )*: The current file state ( `new`, `start`, `signed`, `upload`, `progress`, `done`, `invalid`, `error` )
 
 **`content`** *( key, json )*: 
-Event to hook a data manipulation. So you are able to change the object's key and json data before signing and uploading
+Event to hook a data manipulation. So you are able to change the object's key and JSON data before signing and uploading
 * `key` *( String )*: The generated key
 * `json` *( Object )*: The media-api json data
 	* `json.blob` *( Boolean )*: **Do not manipulate this!** Flag to define a regular file upload
@@ -430,10 +434,11 @@ File error
 ## Release History
 |Version|Date|Description|
 |:--:|:--:|:--|
+|v0.4.4|2014-09-23|added options to change the internal css classes|
 |v0.4.3|2014-09-23|some small fixes and options plus optimized read me.|
 |v0.4.2|2014-09-16|fixed multiple upload of same file.|
 |v0.4.1|2014-06-13|Optimized readme|
-|v0.4.0|2014-06-13|Added file `abort`; client `abortAll`; Added event hook `content` and `file.content` to manipulate the key and json data|
+|v0.4.0|2014-06-13|Added file `abort`; client `abortAll`; Added event hook `content` and `file.content` to manipulate the key and JSON data|
 |v0.3.0|2014-06-11|Added media api arguments like `ttl`, `tags`, `properties`, `acl` and `content-disposition`; Added details docs and some code optimisations|
 |v0.2.0|2014-06-10|Gui less version|
 |v0.1.0|2014-06-09|Initial version|

@@ -558,12 +558,18 @@
     resultTemplateFn: null,
     maxsize: 0,
     maxcount: 0,
+    width: null,
+    height: null,
     accept: null,
     ttl: 0,
     acl: "public-read",
     properties: null,
     tags: null,
-    "content-disposition": null
+    "content-disposition": null,
+    cssdroppable: "dropable",
+    csshover: "hover",
+    cssprocess: "process",
+    cssdisabled: "disabled"
   };
 
   _defauktKeys = (function() {
@@ -579,7 +585,7 @@
   MediaApiClient = (function(_super) {
     __extends(MediaApiClient, _super);
 
-    MediaApiClient.prototype.version = "0.4.3";
+    MediaApiClient.prototype.version = "0.4.4";
 
     MediaApiClient.prototype._rgxHost = /https?:\/\/[^\/$\s]+/i;
 
@@ -766,7 +772,7 @@
         this.el.ondragover = this.onHover;
         this.el.ondragleave = this.onLeave;
         this.el.ondrop = this.onSelect;
-        this.$el.addClass("droppable");
+        this.$el.addClass(this.options.cssdroppable);
       } else {
 
       }
@@ -780,11 +786,11 @@
         return;
       }
       if (this.options.maxcount <= 0 || this.idx_started < this.options.maxcount) {
-        this.$el.removeClass("hover").addClass("process");
+        this.$el.removeClass(this.options.csshover).addClass(this.options.cssprocess);
         files = ((_ref = evnt.target) != null ? _ref.files : void 0) || ((_ref1 = evnt.originalEvent) != null ? (_ref2 = _ref1.target) != null ? _ref2.files : void 0 : void 0) || ((_ref3 = evnt.dataTransfer) != null ? _ref3.files : void 0) || ((_ref4 = evnt.originalEvent) != null ? (_ref5 = _ref4.dataTransfer) != null ? _ref5.files : void 0 : void 0);
         this.upload(files);
       } else {
-        this.$el.removeClass("hover");
+        this.$el.removeClass(this.options.csshover);
         this.disable();
       }
     };
@@ -800,7 +806,7 @@
           return _this.within_enter = false;
         };
       })(this)), 0);
-      this.$el.addClass("hover");
+      this.$el.addClass(this.options.csshover);
     };
 
     MediaApiClient.prototype.onOver = function(evnt) {
@@ -815,7 +821,7 @@
         return;
       }
       if (!this.within_enter) {
-        this.$el.removeClass("hover");
+        this.$el.removeClass(this.options.csshover);
       }
     };
 
@@ -842,13 +848,13 @@
 
     MediaApiClient.prototype.disable = function() {
       this.$sel.attr("disabled", "disabled");
-      this.$el.addClass("disabled");
+      this.$el.addClass(this.options.cssdisabled);
       this.enabled = false;
     };
 
     MediaApiClient.prototype.enable = function() {
       this.$sel.removeAttr("disabled");
-      this.$el.removeClass("disabled");
+      this.$el.removeClass(this.options.cssdisabled);
       this.enabled = true;
     };
 
@@ -872,7 +878,7 @@
     };
 
     MediaApiClient.prototype.onFinish = function() {
-      this.$el.removeClass("process");
+      this.$el.removeClass(this.options.cssprocess);
     };
 
     MediaApiClient.prototype._checkFinish = function() {

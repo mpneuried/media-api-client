@@ -412,12 +412,18 @@ _defaults =
 	resultTemplateFn: null
 	maxsize: 0
 	maxcount: 0
+	width: null
+	height: null
 	accept: null
 	ttl: 0
 	acl: "public-read"
 	properties: null
 	tags: null
 	"content-disposition": null
+	cssdroppable: "dropable"
+	csshover: "hover"
+	cssprocess: "process"
+	cssdisabled: "disabled"
 
 _defauktKeys = for _k, _v of _defaults
 	_k
@@ -582,7 +588,7 @@ class MediaApiClient extends Base
 			#@el.ondragover = @onOver
 			@el.ondragleave = @onLeave
 			@el.ondrop = @onSelect
-			@$el.addClass( "droppable" )
+			@$el.addClass( @options.cssdroppable )
 		else
 		return
 
@@ -592,12 +598,12 @@ class MediaApiClient extends Base
 		if not @enabled
 			return
 		if @options.maxcount <= 0 or @idx_started < @options.maxcount
-			@$el.removeClass( "hover" ).addClass( "process" )
+			@$el.removeClass( @options.csshover ).addClass( @options.cssprocess )
 
 			files = evnt.target?.files or evnt.originalEvent?.target?.files or evnt.dataTransfer?.files or evnt.originalEvent?.dataTransfer?.files
 			@upload( files )
 		else
-			@$el.removeClass( "hover" )
+			@$el.removeClass( @options.csshover )
 			@disable()
 		return
 
@@ -607,7 +613,7 @@ class MediaApiClient extends Base
 			return
 		@within_enter = true
 		setTimeout( ( => @within_enter = false ), 0)
-		@$el.addClass( "hover" )
+		@$el.addClass( @options.csshover )
 		return
 
 	onOver: ( evnt )=>
@@ -620,7 +626,7 @@ class MediaApiClient extends Base
 		if not @enabled
 			return
 		if not @within_enter
-			@$el.removeClass( "hover" )
+			@$el.removeClass( @options.csshover )
 		return
 
 	upload: ( files )=>
@@ -639,13 +645,13 @@ class MediaApiClient extends Base
 
 	disable: =>
 		@$sel.attr( "disabled", "disabled" )
-		@$el.addClass( "disabled" )
+		@$el.addClass( @options.cssdisabled )
 		@enabled = false
 		return
 
 	enable: =>
 		@$sel.removeAttr( "disabled" )
-		@$el.removeClass( "disabled" )
+		@$el.removeClass( @options.cssdisabled )
 		@enabled = true
 		return			
 
@@ -667,7 +673,7 @@ class MediaApiClient extends Base
 		return
 
 	onFinish: =>
-		@$el.removeClass( "process" )
+		@$el.removeClass( @options.cssprocess )
 		return
 
 	_checkFinish: =>
