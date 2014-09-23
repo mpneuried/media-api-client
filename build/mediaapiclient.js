@@ -296,6 +296,12 @@
           filename: _name
         }
       };
+      if (this.options.width != null) {
+        this.json.width = this.options.width;
+      }
+      if (this.options.height != null) {
+        this.json.height = this.options.height;
+      }
       if (this.options.tags != null) {
         this.json.tags = this.options.tags;
       }

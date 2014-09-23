@@ -184,6 +184,9 @@ class File extends Base
 			properties: 
 				filename: _name
 
+		@json.width = @options.width if @options.width?
+		@json.height = @options.height if @options.height?
+
 		@json.tags = @options.tags if @options.tags?
 		@json.properties = @options.properties if @options.properties?
 		@json[ "content-disposition" ] = @options[ "content-disposition" ] if @options[ "content-disposition" ]?

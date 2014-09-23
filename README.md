@@ -54,6 +54,8 @@ Options can be used as JS options or data attributes. Expect the function option
 * **options.maxsize** ( `Number`, *default `0`* ): Maximum size of a file. `0` means no restriction.
 * **options.maxcount** ( `Number`, *default `0`* ): Maximum count of files. `0` means no restriction.
 * **options.ttl** ( `Number`, *default `0`* ): File ttl to invalidate file after `n` seconds. `0` means forever.
+* **options.width** ( `Number`, *default `0`* ): Recalc a image to this width. If you define width and height the image could be disorted. If you only define width `> 0` the resizing will preserve the aspect ratio.
+* **options.height** ( `Number`, *default `0`* ):  Recalc a image to this height. If you define width and height the image could be disorted. If you only define height `> 0` the resizing will preserve the aspect ratio.
 * **options.tags** ( `Array` ): File tags to add to the media-api object.
 * **options.properties** ( `Object`, *default `{ filename: "{FileApi.name}" }`* ): Property object to add to the media-api object
 * **options.content-disposition** ( `String` ): the content disposition e.g. `attachment; filename=friendly_filename.pdf`
@@ -264,6 +266,8 @@ Event to hook a data manipulation. So you are able to change the object's key an
 	* `json.blob` *( Boolean )*: **Do not manipulate this!** Flag to define a regular file upload
 	* `json.acl` *( `String`, *default `public-read`; enum:( `public-read`, `authenticated-read` )*: The S3 access control.
 	* `json.ttl` *( `Number`, *default `0`)*: File ttl to invalidate file after `n` seconds. `0` means forever.
+	* `json.width` *( `Number`, *default `0`)*: Recalc a image to this width. If you define width and height the image could be disorted. If you only define width `> 0` the resizing will preserve the aspect ratio.
+	* `json.height` *( `Number`, *default `0`)*:  Recalc a image to this height. If you define width and height the image could be disorted. If you only define height `> 0` the resizing will preserve the aspect ratio.
 	* `json.properties` *( Object )*: Optional properties object 
 	* `json.tags` *( Array )*: An Array of Strings to set object tags. The Media-API can query by this tags.
 	* `json.content_type` *( String )*: The files content type read by the browser file API
@@ -426,7 +430,7 @@ File error
 ## Release History
 |Version|Date|Description|
 |:--:|:--:|:--|
-|v0.4.3|2014-09-23|some small fixed and optimized read me.|
+|v0.4.3|2014-09-23|some small fixes and options plus optimized read me.|
 |v0.4.2|2014-09-16|fixed multiple upload of same file.|
 |v0.4.1|2014-06-13|Optimized readme|
 |v0.4.0|2014-06-13|Added file `abort`; client `abortAll`; Added event hook `content` and `file.content` to manipulate the key and json data|
