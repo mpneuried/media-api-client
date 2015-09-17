@@ -75,7 +75,7 @@
               <label id="acceptonly" class="mediaapiclient" for="acceptonlyselect" data-keyprefix="acceptonly">
                 <b class="dropactive"><span>click to select or drop files here ( only pdf )</span></b>
                  <b class="dropfallback"><span>Your Browser is not supported. Please use a modern Browser.</span></b>
-                <input type="file" id="acceptonlyselect" name="acceptonly" accept=".pdf" />
+                <input type="file" id="acceptonlyselect" name="acceptonly" accept=".pdf,.csv,image/*" />
                 <div class="results"></div>
               </label>
             </fieldset>
@@ -90,7 +90,6 @@
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="../dist/mediaapiclient.debug.js"></script>
-    <script src="./test.js"></script>
+    <script src="http://requirejs.org/docs/release/2.1.13/comments/require.js" data-main="./test-require.js"></script>
   </body>
 </html>

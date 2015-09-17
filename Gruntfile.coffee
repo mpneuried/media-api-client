@@ -5,10 +5,6 @@ module.exports = (grunt) ->
 		pkg: grunt.file.readJSON('package.json')
 		cnf: grunt.file.readJSON('config.json')
 		watch:
-			base:
-				files: ["_src/**/*.coffee", "!_src/test/**/*.coffee"]
-				tasks: [ "coffee:base", "includereplace:base" ]
-
 			css:
 				files: ["_src/**/*.css"]
 				tasks: [ "copy:css" ]
@@ -18,7 +14,7 @@ module.exports = (grunt) ->
 				tasks: [ "stylus:css" ]
 
 			test:
-				files: ["_src/test/**/*.coffee"]
+				files: ["_src/test/**/*.coffee", "!_src/test/**/*commonjs.coffee"]
 				tasks: [ "coffee:test", "includereplace:test" ]
 
 			testhtml:
@@ -26,24 +22,93 @@ module.exports = (grunt) ->
 				tasks: [ "copy:testhtml", "includereplace:test" ]
 
 		coffee:
-			base:
-				files:
-					"build/mediaapiclient.js": ["_src/main.coffee"]
-
 			test:
 				expand: true
 				cwd: '_src/test',
 				src: ["**/*.coffee"]
 				dest: 'test'
 				ext: '.js'
+		
+		concurrent:
+			watch:
+				tasks: [ "browserify:dev", "watch" ]
+				options:
+					logConcurrentOutput: true
+		
+		browserify:
+			base:
+				options:
+					transform: ["coffeeify"]
+					plugin: [
+						[ "browserify-derequire" ]
+					]
+					browserifyOptions:
+						extensions: ".coffee"
+						standalone: "MediaApiClient"
+						external: true
+				files:
+					'dist/mediaapiclient.js': "_src/lib/main.coffee"
+					
+			basecommonjs:
+				options:
+					transform: ["coffeeify"]
+					plugin: [
+						[ "browserify-derequire" ]
+					]
+					browserifyOptions:
+						extensions: ".coffee"
+						external: [ "xhr", "domel" ]
+				files:
+					'dist/mediaapiclient.js': "_src/lib/main.coffee"
+			
+			commonjs_test:
+				options:
+					transform: ["coffeeify"]
+					plugin: [
+						[ "browserify-derequire" ]
+					]
+					browserifyOptions:
+						extensions: ".coffee"
+				files:
+					'test/test-commonjs.js': "_src/test/test-commonjs.coffee"
+
+			basedebug:
+				options:
+					transform: ["coffeeify"]
+					plugin: [
+						[ "browserify-derequire" ]
+					]
+					browserifyOptions:
+						debug: true
+						extensions: ".coffee"
+						standalone: "MediaApiClient"
+						external: true
+				files:
+					'dist/mediaapiclient.debug.js': "_src/lib/main.coffee"
+			
+			dev:
+				options:
+					watch: true
+					keepAlive: true
+					transform: ["coffeeify"]
+					plugin: [
+						[ "browserify-derequire" ]
+					]
+					browserifyOptions:
+						debug: true
+						extensions: ".coffee"
+						standalone: "MediaApiClient"
+						external: true
+				files:
+					'dist/mediaapiclient.debug.js': "_src/lib/main.coffee"
 
 		stylus:
 			options:
 				compress: false
 			css:
 				files:
-					"build/mediaapiclient.css": ["_src/main.styl"]
-					"build/mediaapiclient-nonbootstrap.css": ["_src/nonbootstrap.styl"]
+					"dist/mediaapiclient.css": ["_src/main.styl"]
+					"dist/mediaapiclient-nonbootstrap.css": ["_src/nonbootstrap.styl"]
 
 		copy:
 			testhtml:
@@ -54,21 +119,21 @@ module.exports = (grunt) ->
 				ext: '.html'
 
 		uglify:
-			options: 
+			options:
 				banner: "/*\nMedia-API Client (<%= pkg.version %>)\n*/\n"
 			js:
 				files:
-					"build/mediaapiclient.min.js": ["build/mediaapiclient.js"]
+					"dist/mediaapiclient.min.js": ["dist/mediaapiclient.js"]
 
 		cssmin:
-			options: 
+			options:
 				banner: "/*\nMedia-API Client (<%= pkg.version %>)\n*/"
 			css:
 				files:
-					"build/mediaapiclient.min.css": ["build/mediaapiclient.css"]
-					"build/mediaapiclient-nonbootstrap.min.css": ["build/mediaapiclient-nonbootstrap.css"]
+					"dist/mediaapiclient.min.css": ["dist/mediaapiclient.css"]
+					"dist/mediaapiclient-nonbootstrap.min.css": ["dist/mediaapiclient-nonbootstrap.css"]
 
-		includereplace: 
+		includereplace:
 			base:
 				options:
 					globals:
@@ -78,7 +143,7 @@ module.exports = (grunt) ->
 					suffix: ''
 
 				files:
-					"build/mediaapiclient.js": ["build/mediaapiclient.js"]
+					"dist/mediaapiclient.js": ["dist/mediaapiclient.js"]
 
 			test:
 				options:
@@ -95,7 +160,6 @@ module.exports = (grunt) ->
 					"test/test-require.js": ["test/test-require.js"]
 					"test/test-require.html": ["test/test-require.html"]
 
-
 	# Load npm modules
 	grunt.loadNpmTasks "grunt-contrib-watch"
 	grunt.loadNpmTasks "grunt-contrib-coffee"
@@ -104,18 +168,22 @@ module.exports = (grunt) ->
 	grunt.loadNpmTasks "grunt-contrib-uglify"
 	grunt.loadNpmTasks "grunt-contrib-cssmin"
 	grunt.loadNpmTasks "grunt-include-replace"
+	grunt.loadNpmTasks "grunt-concurrent"
+	grunt.loadNpmTasks "grunt-browserify"
 
 	# just a hack until this issue has been fixed: https://github.com/yeoman/grunt-regarde/issues/3
 	grunt.option('force', not grunt.option('force'))
 	
+	
 	# ALIAS TASKS
+	grunt.registerTask "watcher", [ "concurrent:watch" ]
 	grunt.registerTask "default", "build-test"
 	grunt.registerTask "minify", [ "uglify:js", "cssmin:css" ]
 
 	# build the project
-	grunt.registerTask "build", [ "coffee:base", "stylus:css", "includereplace:base", "minify" ]
+	grunt.registerTask "build", [ "browserify:base", "stylus:css", "includereplace:base"]#, "minify" ]
 
 	# build the project
-	grunt.registerTask "build-test", [ "build", "coffee:test", "includereplace:test", "copy:testhtml" ]
+	grunt.registerTask "build-test", [ "build", "coffee:test", "browserify:basedebug", "browserify:commonjs_test", "includereplace:test", "copy:testhtml" ]
 
 	return

@@ -11,8 +11,7 @@
     <title>Media API Client TEST</title>
 
     <!-- Bootstrap core CSS -->
-    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="../build/mediaapiclient.css">
+    <link rel="stylesheet" href="../dist/mediaapiclient-nonbootstrap.css">
     <style>
       body {
         padding-top: 50px;
@@ -22,69 +21,39 @@
 
   <body>
 
-    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-      <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="#">Media API upload TEST</a>
-        </div>
-        <div class="collapse navbar-collapse">
-        </div><!--/.nav-collapse -->
-      </div>
-    </div>
+	  <h3>Media API upload TEST</h3>
 
-    <div class="container">
-      <div class="row">
+      <form id="filedrop" method="POST" enctype="multipart/form-data">
 
-        <div class=".col-md-6 .col-md-offset-2">
-          <form id="filedrop" method="POST" enctype="multipart/form-data">
+          <label id="standard" class="mediaapiclient" for="standardselect">
+            <b class="dropinfo dropactive"><span>click to select or drop files here</span></b>
+            <b class="dropinfo dropfallback"><span>Your Browser is not supported. Please use a modern Browser.</span></b>
+            <input type="file" id="standardselect" name="standard" multiple="multiple" />
+            <div class="results"></div>
+          </label>
 
-            <fieldset>
-              <label id="standard" class="mediaapiclient" for="standardselect">
-                <b class="dropactive"><span>click to select or drop files here</span></b>
-                <b class="dropfallback"><span>Your Browser is not supported. Please use a modern Browser.</span></b>
-                <input type="file" id="standardselect" name="standard" multiple="multiple" />
-                <div class="results"></div>
-              </label>
-            </fieldset>
+          <label id="count" class="mediaapiclient" for="countselect" data-keyprefix="count" data-maxcount="1">
+            <b class="dropinfo dropactive"><span>click to select or drop files here ( only one )</span></b>
+             <b class="dropinfo dropfallback"><span>Your Browser is not supported. Please use a modern Browser.</span></b>
+            <input type="file" id="countselect" name="count" />
+            <div class="results"></div>
+          </label>
 
-             <fieldset>
-              <label id="count" class="mediaapiclient" for="countselect" data-keyprefix="count" data-maxcount="1">
-                <b class="dropactive"><span>click to select or drop files here ( only one )</span></b>
-                 <b class="dropfallback"><span>Your Browser is not supported. Please use a modern Browser.</span></b>
-                <input type="file" id="countselect" name="count" />
-                <div class="results"></div>
-              </label>
-            </fieldset>
+          <label id="smallfile" class="mediaapiclient" for="smallfileselect" data-keyprefix="smallfile" data-maxsize="1000">
+            <b class="dropinfo dropactive"><span>click to select or drop files here ( max size 1000kb )</span></b>
+             <b class="dropinfo dropfallback"><span>Your Browser is not supported. Please use a modern Browser.</span></b>
+            <input type="file" id="smallfileselect" name="smallfile" />
+            <div class="results"></div>
+          </label>
 
-            <fieldset>
-              <label id="smallfile" class="mediaapiclient" for="smallfileselect" data-keyprefix="smallfile" data-maxsize="1000">
-                <b class="dropactive"><span>click to select or drop files here ( max size 1000kb )</span></b>
-                 <b class="dropfallback"><span>Your Browser is not supported. Please use a modern Browser.</span></b>
-                <input type="file" id="smallfileselect" name="smallfile" />
-                <div class="results"></div>
-              </label>
-            </fieldset>
+          <label id="acceptonly" class="mediaapiclient" for="acceptonlyselect" data-keyprefix="acceptonly">
+            <b class="dropinfo dropactive"><span>click to select or drop files here ( only pdf )</span></b>
+             <b class="dropinfo dropfallback"><span>Your Browser is not supported. Please use a modern Browser.</span></b>
+            <input type="file" id="acceptonlyselect" name="acceptonly" accept=".pdf,.csv,image/*" />
+            <div class="results"></div>
+          </label>
 
-            <fieldset>
-              <label id="acceptonly" class="mediaapiclient" for="acceptonlyselect" data-keyprefix="acceptonly">
-                <b class="dropactive"><span>click to select or drop files here ( only pdf )</span></b>
-                 <b class="dropfallback"><span>Your Browser is not supported. Please use a modern Browser.</span></b>
-                <input type="file" id="acceptonlyselect" name="acceptonly" accept=".pdf,.csv,image/*" />
-                <div class="results"></div>
-              </label>
-            </fieldset>
-
-          </form>
-        </div>
-      </div>
-
-    </div><!-- /.container -->
+      </form>
 
 
     <!-- Bootstrap core JavaScript

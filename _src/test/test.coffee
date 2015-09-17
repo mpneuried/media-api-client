@@ -1,4 +1,4 @@
-jQuery( ->
+document.addEventListener 'DOMContentLoaded', ->
 	MediaApiClient.defaults( { host: "@@testhost", domain: "mediaapitest", accesskey: "@@testaccesskey" } )
 	
 	clientStd = new MediaApiClient( "#standard", "#standard .results", { "content-disposition": "attachment; filename=friendly_filename.jpg", "ttl": 30 } )
@@ -10,7 +10,7 @@ jQuery( ->
 		console.log "all finished"
 		return
 
-	clientStd.on "file.new", ( file )=>
+	clientStd.on "file.new", ( file )->
 		file.on "aborted", ->
 			console.log "file aborted", @idx
 			return
@@ -36,4 +36,3 @@ jQuery( ->
 		return
 	
 	return
-)

@@ -32,10 +32,10 @@
   background-color: rgba(255,165,0,0.25);
   color: #ffa500;
 }
-.mediaapiclient.droppable .dropactive {
+.mediaapiclient.dropable .dropactive {
   display: block;
 }
-.mediaapiclient.droppable .dropfallback {
+.mediaapiclient.dropable .dropfallback {
   display: none;
 }
 .mediaapiclient.disabled {
@@ -56,47 +56,4 @@
   color: #0ff;
   border-color: #0ff;
   border-style: solid;
-}
-.file {
-  position: relative;
-  border: 1px solid #808080;
-  border-top: 0px solid;
-  padding: 5px 10px;
-  margin: 0 5px;
-}
-.file b {
-  color: #666;
-}
-.file .progress {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-}
-.file .progress-bar {
-  background-color: rgba(0,0,255,0.3);
-  text-align: right;
-  height: 100%;
-  padding: 0;
-  color: #fff;
-  font-size: 13px;
-}
-.file .progress-bar span {
-  display: block;
-  padding: 6px 20px 0 0;
-}
-.file:first-child {
-  border-top: 1px solid #808080;
-  -webkit-border-top-left-radius: 2px;
-  border-top-left-radius: 2px;
-  -webkit-border-top-right-radius: 2px;
-  border-top-right-radius: 2px;
-}
-.file:last-child {
-  -webkit-border-bottom-left-radius: 2px;
-  border-bottom-left-radius: 2px;
-  -webkit-border-bottom-right-radius: 2px;
-  border-bottom-right-radius: 2px;
-  margin-bottom: 5px;
 }

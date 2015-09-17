@@ -434,6 +434,7 @@ File error
 ## Release History
 |Version|Date|Description|
 |:--:|:--:|:--|
+|v1.0.0|2015-09-17|modern development env, by using browserify. Removed jQuery dependency by using `domel` and `xhr`|
 |v0.4.4|2014-09-23|added options to change the internal css classes|
 |v0.4.3|2014-09-23|some small fixes and options plus optimized read me.|
 |v0.4.2|2014-09-16|fixed multiple upload of same file.|
