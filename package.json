@@ -1,9 +1,9 @@
 {
   "name": "media-api-client",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "TCS Media-API JS client for the browser",
   "private": true,
-  "main": "dist/mediaapiclient.js",
+  "main": "lib/main.js",
   "author": "mpneuried",
   "license": "MIT",
   "peerDependencies": {
@@ -23,7 +23,6 @@
     "grunt-contrib-uglify": "0.x",
     "grunt-contrib-watch": "0.x",
     "grunt-include-replace": "3.x",
-    "lodash.assign": "3.x",
 	
     "domel": "0.x",
     "xhr": "2.x"

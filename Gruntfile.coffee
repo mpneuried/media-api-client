@@ -28,6 +28,12 @@ module.exports = (grunt) ->
 				src: ["**/*.coffee"]
 				dest: 'test'
 				ext: '.js'
+			basecommonjs:
+				expand: true
+				cwd: '_src/lib',
+				src: ["**/*.coffee"]
+				dest: 'lib'
+				ext: '.js'
 		
 		concurrent:
 			watch:
@@ -45,22 +51,9 @@ module.exports = (grunt) ->
 					browserifyOptions:
 						extensions: ".coffee"
 						standalone: "MediaApiClient"
-						external: true
 				files:
 					'dist/mediaapiclient.js': "_src/lib/main.coffee"
-					
-			basecommonjs:
-				options:
-					transform: ["coffeeify"]
-					plugin: [
-						[ "browserify-derequire" ]
-					]
-					browserifyOptions:
-						extensions: ".coffee"
-						external: [ "xhr", "domel" ]
-				files:
-					'dist/mediaapiclient.js': "_src/lib/main.coffee"
-			
+								
 			commonjs_test:
 				options:
 					transform: ["coffeeify"]
@@ -82,7 +75,6 @@ module.exports = (grunt) ->
 						debug: true
 						extensions: ".coffee"
 						standalone: "MediaApiClient"
-						external: true
 				files:
 					'dist/mediaapiclient.debug.js': "_src/lib/main.coffee"
 			
@@ -98,7 +90,6 @@ module.exports = (grunt) ->
 						debug: true
 						extensions: ".coffee"
 						standalone: "MediaApiClient"
-						external: true
 				files:
 					'dist/mediaapiclient.debug.js': "_src/lib/main.coffee"
 
@@ -159,6 +150,8 @@ module.exports = (grunt) ->
 					"test/test.html": ["test/test.html"]
 					"test/test-require.js": ["test/test-require.js"]
 					"test/test-require.html": ["test/test-require.html"]
+					"test/test-commonjs.js": ["test/test-commonjs.js"]
+					"test/test-commonjs.html": ["test/test-commonjs.html"]
 
 	# Load npm modules
 	grunt.loadNpmTasks "grunt-contrib-watch"
@@ -181,7 +174,7 @@ module.exports = (grunt) ->
 	grunt.registerTask "minify", [ "uglify:js", "cssmin:css" ]
 
 	# build the project
-	grunt.registerTask "build", [ "browserify:base", "stylus:css", "includereplace:base"]#, "minify" ]
+	grunt.registerTask "build", [ "browserify:base", "coffee:basecommonjs", "stylus:css", "includereplace:base"]#, "minify" ]
 
 	# build the project
 	grunt.registerTask "build-test", [ "build", "coffee:test", "browserify:basedebug", "browserify:commonjs_test", "includereplace:test", "copy:testhtml" ]

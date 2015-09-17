@@ -1,5 +1,4 @@
 dom = require( "domel" )
-assign = require( "lodash.assign" )
 
 utils = require( "./utils" )
 Base = require( "./base" )
@@ -66,7 +65,7 @@ class Client extends Base
 
 
 		_htmlData = @el.d.data()
-		@options = assign( {}, _defaults, _htmlData, options or {} )
+		@options = utils.assign( {}, _defaults, _htmlData, options or {} )
 
 		if not @options.host?.length
 			@_error( null, "missing-host" )
@@ -176,7 +175,8 @@ class Client extends Base
 			@sel.d.on( "change", @onSelect )
 			@useFileAPI = true
 			@initFileAPI()
-					
+		else
+			# TODO implement IE9 Fallback		
 		return
 
 	initFileAPI: =>
