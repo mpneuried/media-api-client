@@ -1,11 +1,22 @@
 {
   "name": "media-api-client",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "TCS Media-API JS client for the browser",
-  "private": true,
+  "keywords": [ "media-api", "upload", "file", "drag", "drop", "browser" ],
   "main": "lib/main.js",
   "author": "mpneuried",
   "license": "MIT",
+  "homepage": "https://github.com/mpneuried/media-api-client",
+  "bugs": "https://github.com/mpneuried/media-api-client/issues",
+  "author": {
+    "name": "mpneuried",
+    "email": "",
+    "url": "https://github.com/mpneuried"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mpneuried/media-api-client.git"
+  },
   "peerDependencies": {
     "domel": "0.x",
     "xhr": "2.x"
