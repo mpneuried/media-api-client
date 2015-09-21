@@ -66,6 +66,7 @@ Options can be used as JS options or data attributes. Expect the function option
 * **options.autostart** ( `Boolean`, *default `true`* ): Start upload on drop/change
 * **options.requestSignFn** ( `Function` ): Function to generate the signature. This Method should be redefined by you, because the standard Media-API signing will be IP filtered. So you have to tunnel it trough your own server or generate a valid signature within your server. For details see the `Signing` section. 
 * **options.resultTemplateFn** ( `Function` ): Template function to display the File state.
+* **options.cssfileelement** ( `String` *default `file col-sm-6 col-md-4`* ): Css class added  to a new file element
 * **options.cssdroppable** ( `String` *default `dropable`* ): Css class added  to `dragSelector` on successful drag'n'drop init 
 * **options.csshover** ( `String` *default `hover`* ): Css class added to `dragSelector` on hover with a file drag
 * **options.cssprocess** ( `String` *default `process`* ): Css class added to `dragSelector`  during a active upload
@@ -299,6 +300,9 @@ File error
 * `file` *( File )*: The file object 
 * `error` *( Error )*: the error object
 
+**`file.hover`** *()*: 
+User hovered with a file
+
 ## File Object `FileInstance = new File()`
 
 For every dropped/selected File a FileObject is generated witch initializes the signing and upload.
@@ -434,6 +438,9 @@ File error
 ## Release History
 |Version|Date|Description|
 |:--:|:--:|:--|
+|v1.0.4|2015-09-21|small changes to set file object class and added `file.hover` event|
+|v1.0.3|2015-09-17|made module public|
+|v1.0.1|2015-09-17|optimized common js usage to not bundle peer dependencies|
 |v1.0.0|2015-09-17|modern development env, by using browserify. Removed jQuery dependency by using `domel` and `xhr`|
 |v0.4.4|2014-09-23|added options to change the internal css classes|
 |v0.4.3|2014-09-23|some small fixes and options plus optimized read me.|

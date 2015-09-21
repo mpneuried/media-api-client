@@ -1,17 +1,9 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.MediaApiClient = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 (function (global){
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.domel = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof _dereq_=="function"&&_dereq_;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof _dereq_=="function"&&_dereq_;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
-var addD, addDWrap, domHelper, isString, nonAutoAttach, root,
+var addD, addDWrap, domHelper, isString, nonAutoAttach,
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
-
-root = this;
-
-
-/*
-	
-	Extend natives
- */
 
 isString = function(vr) {
   return typeof vr === 'string' || vr instanceof String;
@@ -362,7 +354,7 @@ domHelper.prepend = function(el, html) {
     el.insertBefore(child, _latestFirst);
     _latestFirst = child;
   }
-  return el;
+  return addD(el);
 };
 
 domHelper.remove = function(el) {
@@ -379,7 +371,12 @@ domHelper.remove = function(el) {
       i--;
     }
   }
-  return el;
+  return addD(el);
+};
+
+domHelper.empty = function(el) {
+  el.innerHTML = "";
+  return addD(el);
 };
 
 domHelper.replaceWith = function(el, elToRepl) {
@@ -526,7 +523,7 @@ _defauktKeys = (function() {
 Client = (function(superClass) {
   extend(Client, superClass);
 
-  Client.prototype.version = "1.0.1";
+  Client.prototype.version = "1.0.4";
 
   Client.prototype._rgxHost = /https?:\/\/[^\/$\s]+/i;
 
@@ -741,6 +738,7 @@ Client = (function(superClass) {
     if (!this.enabled) {
       return;
     }
+    this.emit("file.hover");
     this.within_enter = true;
     setTimeout(((function(_this) {
       return function() {
@@ -1236,10 +1234,15 @@ FileView = (function(superClass) {
     this.update = bind(this.update, this);
     this.render = bind(this.render, this);
     FileView.__super__.constructor.apply(this, arguments);
-    if ((this.client.resultTemplateFn != null) && typeof this.options.resultTemplateFn !== "function") {
-      this.template = this.client.resultTemplateFn;
+    if ((this.options.resultTemplateFn != null) && typeof this.options.resultTemplateFn === "function") {
+      this.template = this.options.resultTemplateFn;
     } else {
       this.template = this._defaultTemplate;
+    }
+    if (this.options.cssfileelement != null) {
+      this.resultClass = this.options.cssfileelement;
+    } else {
+      this.resultClass = "file col-sm-6 col-md-4";
     }
     this.fileObj.on("progress", this.update());
     this.fileObj.on("done", this.update());
@@ -1250,7 +1253,7 @@ FileView = (function(superClass) {
 
   FileView.prototype.render = function() {
     this.el = dom.create("div", {
-      "class": "file col-sm-6 col-md-4"
+      "class": this.resultClass
     });
     this.el.innerHTML = this.template(this.fileObj.getData());
     return this.el;

@@ -12,6 +12,10 @@ module.exports = (grunt) ->
 			stylus:
 				files: ["_src/**/*.styl"]
 				tasks: [ "stylus:css" ]
+			
+			coffee:
+				files: ["_src/lib/**/*.coffee"]
+				tasks: [ "coffee:basecommonjs" ]
 
 			test:
 				files: ["_src/test/**/*.coffee", "!_src/test/**/*commonjs.coffee"]

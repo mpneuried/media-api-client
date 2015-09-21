@@ -210,6 +210,7 @@ class Client extends Base
 		evnt.preventDefault()
 		if not @enabled
 			return
+		@emit( "file.hover" )
 		@within_enter = true
 		setTimeout( ( => @within_enter = false ), 0)
 		@el.d.addClass( @options.csshover )

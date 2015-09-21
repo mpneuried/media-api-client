@@ -3,11 +3,16 @@ dom = require( "domel" )
 class FileView extends require("./base")
 	constructor: ( @fileObj, @client, @options )->
 		super
-
-		if @client.resultTemplateFn? and typeof @options.resultTemplateFn isnt "function"
-			@template = @client.resultTemplateFn
+		
+		if @options.resultTemplateFn? and typeof @options.resultTemplateFn is "function"
+			@template = @options.resultTemplateFn
 		else
 			@template = @_defaultTemplate
+		
+		if @options.cssfileelement?
+			@resultClass = @options.cssfileelement
+		else
+			@resultClass = "file col-sm-6 col-md-4"
 
 		@fileObj.on( "progress", @update() )
 		@fileObj.on( "done", @update() )
@@ -16,7 +21,7 @@ class FileView extends require("./base")
 		return
 
 	render: =>
-		@el = dom.create( "div", { class:"file col-sm-6 col-md-4" } )
+		@el = dom.create( "div", { class: @resultClass } )
 		@el.innerHTML = @template( @fileObj.getData() )
 		return @el
 
