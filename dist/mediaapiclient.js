@@ -1,5 +1,5 @@
 /*
-Media-API Client (1.1.1)
+Media-API Client (1.1.2)
 */
 
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.MediaApiClient = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
@@ -529,7 +529,7 @@ _defauktKeys = (function() {
 Client = (function(superClass) {
   extend(Client, superClass);
 
-  Client.prototype.version = "1.1.1";
+  Client.prototype.version = "1.1.2";
 
   Client.prototype._rgxHost = /https?:\/\/[^\/$\s]+/i;
 
@@ -654,7 +654,7 @@ Client = (function(superClass) {
       this._error(null, "invalid-acl");
       return;
     }
-    if ((this.options.requestSignFn != null) && _.isFunction(this.options.requestSignFn)) {
+    if ((this.options.requestSignFn != null) && utils.isFunction(this.options.requestSignFn)) {
       this._sign = this.options.requestSignFn;
     } else {
       this._sign = this._defaultRequestSignature;
@@ -1409,7 +1409,7 @@ module.exports = Client;
 
 
 },{"./base":2,"./client":3,"./file":4,"./fileview":5}],7:[function(_dereq_,module,exports){
-var _intRegex, assign, isArray, isInt, isObject, isString,
+var _intRegex, assign, isArray, isFunction, isInt, isObject, isString,
   slice = [].slice;
 
 isObject = function(vr) {
@@ -1428,6 +1428,10 @@ _intRegex = /^\d+$/;
 
 isInt = function(vr) {
   return _intRegex.test(vr);
+};
+
+isFunction = function(object) {
+  return typeof object === 'function';
 };
 
 assign = function() {
@@ -1449,6 +1453,7 @@ module.exports = {
   isArray: isArray,
   isObject: isObject,
   isString: isString,
+  isFunction: isFunction,
   isInt: isInt,
   assign: assign
 };

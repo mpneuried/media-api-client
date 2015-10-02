@@ -134,7 +134,7 @@ class Client extends Base
 			@_error( null, "invalid-acl" )
 			return
 			
-		if @options.requestSignFn? and _.isFunction( @options.requestSignFn )
+		if @options.requestSignFn? and utils.isFunction( @options.requestSignFn )
 			@_sign = @options.requestSignFn
 		else
 			@_sign = @_defaultRequestSignature

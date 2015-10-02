@@ -11,6 +11,9 @@ _intRegex = /^\d+$/
 isInt = ( vr )->
 	return _intRegex.test( vr )
 
+isFunction = ( object )->
+	return typeof(object) is 'function'
+
 assign = ( tgrt, srcs... )->
 	for src in srcs
 		if isObject( src )
@@ -22,5 +25,6 @@ module.exports =
 	isArray: isArray
 	isObject: isObject
 	isString: isString
+	isFunction: isFunction
 	isInt: isInt
 	assign: assign
