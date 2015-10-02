@@ -1,4 +1,5 @@
 dom = require( "domel" )
+xhr = require( "xhr" )
 
 utils = require( "./utils" )
 Base = require( "./base" )
@@ -132,6 +133,11 @@ class Client extends Base
 		if @options.acl? and not utils.isString( @options.acl ) and @options.acl not in [ "public-read", "authenticated-read" ]
 			@_error( null, "invalid-acl" )
 			return
+			
+		if @options.requestSignFn? and _.isFunction( @options.requestSignFn )
+			@_sign = @options.requestSignFn
+		else
+			@_sign = @_defaultRequestSignature
 
 		_inpAccept = @sel.getAttribute( "accept" )
 		if @options.accept? or _inpAccept?
@@ -180,9 +186,9 @@ class Client extends Base
 		return
 
 	initFileAPI: =>
-		xhr = new XMLHttpRequest()
+		_xhr = new XMLHttpRequest()
 		
-		if xhr?.upload
+		if _xhr?.upload
 			@el.ondragover = @onHover
 			@el.ondragleave = @onLeave
 			@el.ondrop = @onSelect
@@ -237,6 +243,77 @@ class Client extends Base
 					new File( file, @idx_started, @, @options )
 				else
 					@disable()
+		return
+	
+	deleteFile: ( key, rev, cb )=>
+		
+		_url = @options.host + @options.domain + "/#{key}?revision=#{rev}"
+		
+		@sign { url: _url, key: key }, ( err, surl, signature )=>
+			if err
+				cb( err )
+				return
+				
+			xhr( {
+				url: surl
+				method: "DELETE"
+			}, ( err, resp, body )=>
+				if err
+					cb( err )
+					return
+				cb( null, body )
+				return
+			)
+			return
+		return
+	
+	sign: ( opt, cb )=>
+		_opt = utils.assign( {}, { domain: @options.domain, accesskey: @options.accesskey, json: null, url: null, key: null }, opt )
+		if not _opt.url?.length
+			@_error( cb, "invalid-sign-url" )
+			return
+		if not _opt.key?.length
+			@_error( cb, "invalid-sign-key" )
+			return
+			
+		@_sign _opt.domain, _opt.accesskey, _opt.url, _opt.key, _opt.json, ( err, signature )->
+			if err
+				cb( err )
+				return
+			_surl = _opt.url
+			if _surl.indexOf( "?" ) >= 0
+				_surl += "&"
+			else
+				_surl += "?"
+			_surl += ( "signature=" + encodeURIComponent( signature ) )
+			cb( null, _surl, signature )
+			return
+		return
+		
+	_defaultRequestSignature: ( domain, accesskey, madiaapiurl, key, json, cb )=>
+		
+		_url = @options.host + domain + "/sign/" + accesskey
+		
+		_xhr = new window.XMLHttpRequest()
+		
+		data = new FormData()
+		data.append( "url", madiaapiurl )
+		data.append( "key", key )
+		if json?
+			data.append( "json", JSON.stringify( json ) )
+		xhr( {
+			xhr: _xhr
+			method: "POST"
+			url: _url
+			body: data
+		}, ( err, resp, signature )->
+			if err
+				console.error "get sign error", err
+				cb( err )
+				return
+			cb( null, signature )
+			return
+		)
 		return
 
 	abortAll: =>
@@ -313,6 +390,8 @@ class Client extends Base
 		"missing-domain": "Missing domain. You have to define a domain."
 		"missing-accesskey": "Missing accesskey. You have to define a accesskey."
 		"missing-keyprefix": "Missing keyprefix. You have to define a keyprefix."
+		"invalid-sign-url": "please define a `url` to sign the request"
+		"invalid-sign-key": "please define a `key` to sign the request"
 		"invalid-ttl": "for the option `ttl` only a positiv number is allowed"
 		"invalid-tags": "for the option `tags` only an array of strings is allowed"
 		"invalid-properties": "for the option `properties` only an object is allowed"

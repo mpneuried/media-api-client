@@ -8,8 +8,9 @@ document.addEventListener 'DOMContentLoaded', ->
 
 	clientStd.on "finish", ->
 		console.log "all finished"
+		
 		return
-
+		
 	clientStd.on "file.new", ( file )->
 		file.on "aborted", ->
 			console.log "file aborted", @idx
@@ -19,6 +20,13 @@ document.addEventListener 'DOMContentLoaded', ->
 
 			file.on "state", ( state )->
 				console.log "file state", @idx, state
+				return
+				
+			file.on "done", ( data )->
+				console.log "file done", data
+				clientStd.deleteFile data.key, data.revision, ( err, result )=>
+					console.log "DELTED FILE", err, result
+					return
 				return
 			
 		if file.idx is 3

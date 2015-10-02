@@ -234,6 +234,30 @@ Start the upload manually.
 
 * `files` : *( `FileAPI-Object[]` )*: An array of file API objects.
 
+#### `ClientInstance.deleteFile( key, revision, cb )`
+
+Delete a file out of the media-api directly from the client.
+ 
+**Arguments**
+
+* `key` : *( `String` )*: The file key
+* `rev` : *( `String` )*: The file's revision
+* `cb` : *( `Function` )*: the callback. You'll receive a possible error and, on success, the deleted entity like `{ rows:[ { ... the deleted entity ... } ] }`
+
+#### `ClientInstance.sign( opt, cb )`
+
+Delete a file out of the media-api directly from the client.
+ 
+**Arguments**
+
+* `opt` : *( `Object` )*: The file key
+	* `url`: *( `String`; **required** )*: The complete url to sign
+	* `key`: *( `String`; **required** )*: The file key to sign
+	* `domain`:  *( `String`; default = `{options.domain}` )*: the domain for the signature
+	* `accesskey`: *( `String`; default = `{options.accesskey}` )*: the accesskey for the signature
+	* `json`: *( `Object`; optional )*: Additional data for siging
+* `cb` : *( `Function` )*: the callback. You'll receive a possible error and, on success, the signed url and the signature itself `( err, surl, signature )`
+
 #### `ClientInstance.disable()`
 
 Disable the client. This will stop the Client from accepting new files
@@ -438,6 +462,7 @@ File error
 ## Release History
 |Version|Date|Description|
 |:--:|:--:|:--|
+|v1.1.0|2015-10-02|optimized singing; added `deleteFile( key, rev, cb )` method to delete a file directly from the client.|
 |v1.0.4|2015-09-21|small changes to set file object class and added `file.hover` event|
 |v1.0.3|2015-09-17|made module public|
 |v1.0.1|2015-09-17|optimized common js usage to not bundle peer dependencies|

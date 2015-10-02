@@ -17,9 +17,6 @@ class File extends require("./base")
 		@on( "start", @start )
 		@on( "signed", @_upload )
 
-		if not @options.requestSignFn?
-			@options.requestSignFn = @_defaultRequestSignature
-
 		if not @options.keyprefix?.length
 			@options.keyprefix = "clientupload"
 
@@ -142,21 +139,15 @@ class File extends require("./base")
 
 		@emit( "content", @key, @json )
 		@client.emit( "file.content", @, @key, @json )
-
-		@options.requestSignFn.call @, @options.domain, @options.accesskey, @url, @key, @json, ( err, signature )=>
+		
+		@client.sign.call @, { url: @url, key: @key, json: @json }, ( err, @url )=>
 			if err
 				@error = err
 				@_setState( 7 )
 				@emit( "error", err )
 				@client.emit( "file.error", @, err )
 				return
-
-			if @url.indexOf( "?" ) >= 0
-				@url += "&"
-			else
-				@url += "?"
-			@url += ( "signature=" + encodeURIComponent( signature ) )
-
+				
 			@_setState( 2 )
 			@emit( "signed" )
 			return
@@ -216,29 +207,5 @@ class File extends require("./base")
 				@emit( "progress", @getProgress(), evnt )
 				return
 			return
-
-	_defaultRequestSignature: ( domain, accesskey, madiaapiurl, key, json, cb )=>
-		_url = @options.host + domain + "/sign/" + accesskey
-		
-		_xhr = new window.XMLHttpRequest()
-		
-		data = new FormData()
-		data.append( "url", madiaapiurl )
-		data.append( "key", key )
-		data.append( "json", JSON.stringify( json ) )
-		xhr( {
-			xhr: _xhr
-			method: "POST"
-			url: _url
-			body: data
-		}, ( err, resp, signature )->
-			if err
-				console.error "get sign error", err
-				cb( err )
-				return
-			cb( null, signature )
-			return
-		)
-		return
 		
 module.exports = File
