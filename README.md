@@ -462,6 +462,7 @@ File error
 ## Release History
 |Version|Date|Description|
 |:--:|:--:|:--|
+|v1.1.1|2015-10-02|added automatic release|
 |v1.1.0|2015-10-02|optimized singing; added `deleteFile( key, rev, cb )` method to delete a file directly from the client.|
 |v1.0.4|2015-09-21|small changes to set file object class and added `file.hover` event|
 |v1.0.3|2015-09-17|made module public|

@@ -6,6 +6,7 @@ $ cat .gitignore
 /node_modules/*
 *.sublime*
 *.rdb
+/_releases
 deploy.json
 config.json
 config*.json

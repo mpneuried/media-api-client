@@ -33,6 +33,8 @@ module.exports = (grunt) ->
 				dest: 'test'
 				ext: '.js'
 			basecommonjs:
+				options: 
+					banner: "/*\nMedia-API Client (<%= pkg.version %>)\n*/\n"
 				expand: true
 				cwd: '_src/lib',
 				src: ["**/*.coffee"]
@@ -48,6 +50,7 @@ module.exports = (grunt) ->
 		browserify:
 			base:
 				options:
+					banner: "/*\nMedia-API Client (<%= pkg.version %>)\n*/\n"
 					transform: ["coffeeify"]
 					plugin: [
 						[ "browserify-derequire" ]
@@ -60,6 +63,7 @@ module.exports = (grunt) ->
 								
 			commonjs_test:
 				options:
+					banner: "/*\nMedia-API Client (<%= pkg.version %>)\n*/\n"
 					transform: ["coffeeify"]
 					plugin: [
 						[ "browserify-derequire" ]
@@ -71,6 +75,7 @@ module.exports = (grunt) ->
 
 			basedebug:
 				options:
+					banner: "/*\nMedia-API Client (<%= pkg.version %>)\n*/\n"
 					transform: ["coffeeify"]
 					plugin: [
 						[ "browserify-derequire" ]
@@ -100,6 +105,7 @@ module.exports = (grunt) ->
 		stylus:
 			options:
 				compress: false
+				banner: "/*\nMedia-API Client (<%= pkg.version %>)\n*/\n"
 			css:
 				files:
 					"dist/mediaapiclient.css": ["_src/main.styl"]
@@ -122,12 +128,24 @@ module.exports = (grunt) ->
 
 		cssmin:
 			options:
-				banner: "/*\nMedia-API Client (<%= pkg.version %>)\n*/"
+				banner: "/*\nMedia-API Client (<%= pkg.version %>)\n*/\n"
 			css:
 				files:
 					"dist/mediaapiclient.min.css": ["dist/mediaapiclient.css"]
 					"dist/mediaapiclient-nonbootstrap.min.css": ["dist/mediaapiclient-nonbootstrap.css"]
-
+		
+		clean:
+			release:
+				src: [ "lib", "test", "dist" ]
+		
+		compress:
+			release:
+				options:
+					archive: "_releases/<%= pkg.name %>_<%= pkg.version %>.zip"
+				files: [
+						{ src: [ "README.md", "dist/**" ], dest: "./" }
+				]
+		
 		includereplace:
 			base:
 				options:
@@ -158,6 +176,7 @@ module.exports = (grunt) ->
 					"test/test-commonjs.html": ["test/test-commonjs.html"]
 
 	# Load npm modules
+	grunt.loadNpmTasks "grunt-contrib-clean"
 	grunt.loadNpmTasks "grunt-contrib-watch"
 	grunt.loadNpmTasks "grunt-contrib-coffee"
 	grunt.loadNpmTasks "grunt-contrib-stylus"
@@ -165,6 +184,7 @@ module.exports = (grunt) ->
 	grunt.loadNpmTasks "grunt-contrib-uglify"
 	grunt.loadNpmTasks "grunt-contrib-cssmin"
 	grunt.loadNpmTasks "grunt-include-replace"
+	grunt.loadNpmTasks "grunt-contrib-compress"
 	grunt.loadNpmTasks "grunt-concurrent"
 	grunt.loadNpmTasks "grunt-browserify"
 
@@ -178,9 +198,10 @@ module.exports = (grunt) ->
 	grunt.registerTask "minify", [ "uglify:js", "cssmin:css" ]
 
 	# build the project
-	grunt.registerTask "build", [ "browserify:base", "coffee:basecommonjs", "stylus:css", "includereplace:base"]#, "minify" ]
+	grunt.registerTask "build", [ "browserify:base", "coffee:basecommonjs", "stylus:css", "includereplace:base", "minify" ]
 
 	# build the project
 	grunt.registerTask "build-test", [ "build", "coffee:test", "browserify:basedebug", "browserify:commonjs_test", "includereplace:test", "copy:testhtml" ]
+	grunt.registerTask "release", [ "clean:release", "build", "compress:release" ]
 
 	return

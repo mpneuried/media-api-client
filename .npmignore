@@ -7,6 +7,7 @@ config.json
 config*.json
 deploy.json
 .editorconfig
+/_releases
 .gitignore
 coffeelint.json
 .travis.yml
