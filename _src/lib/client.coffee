@@ -152,6 +152,9 @@ class Client extends Base
 		@initialize()
 		@idx_started = 0
 		@idx_finished = 0
+		@count_last_finished = 0
+
+		@on "file.upload", @onStarted
 
 		@el.d.data( "mediaapiclient", @ )
 		return
@@ -233,6 +236,13 @@ class Client extends Base
 			return
 		if not @within_enter
 			@el.d.removeClass( @options.csshover )
+		return
+
+	onStarted: =>
+		if @_running
+			return
+		@_running = true
+		@emit( "start" )
 		return
 
 	upload: ( files )=>
@@ -339,8 +349,10 @@ class Client extends Base
 
 	fileError: ( file, err )=>
 		console.error "FILE-ERROR", file, err
-		@idx_finished++
-		@_checkFinish()
+		if not file._errored
+			@idx_finished++
+			@_checkFinish()
+		file._errored = true
 		return
 
 	fileNew: ( file )=>
@@ -355,7 +367,9 @@ class Client extends Base
 
 	_checkFinish: =>
 		if @idx_finished >= @idx_started
-			@emit( "finish" )
+			@_running = false
+			@emit( "finish", @idx_finished - @count_last_finished )
+			@count_last_finished = @idx_finished
 			if @options.maxcount > 0 and @idx_started >= @options.maxcount
 				@disable()
 		return

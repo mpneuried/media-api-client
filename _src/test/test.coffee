@@ -6,8 +6,13 @@ document.addEventListener 'DOMContentLoaded', ->
 	clientSize = new MediaApiClient( "#smallfile", "#smallfile .results", { tags: [ "testtagA", "testtagB" ], properties: { a: 1, b: 2 }, acl: "authenticated-read", "content-disposition": "attachment; filename=friendly_filename.jpg" } )
 	clientType = new MediaApiClient( "#acceptonly", "#acceptonly .results" )
 
-	clientStd.on "finish", ->
-		console.log "all finished"
+	clientStd.on "finish", ( count )->
+		console.info "all finished", count
+		
+		return
+
+	clientStd.on "start", ->
+		console.info "started"
 		
 		return
 		

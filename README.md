@@ -280,8 +280,12 @@ The drag element will offer it's current state by some css classes added or remo
 
 ### Events
 
-**`finish`** *()*: 
+**`start`** *()*: 
+One or more uploades started.
+
+**`finish`** *( count )*: 
 All currently running uploads are done.
+* `count` *( Number )*: The count of finished uploads since the last .finish` event 
 
 **`file.new`** *( file )*: 
 New file dropped/selected.
@@ -462,6 +466,7 @@ File error
 ## Release History
 |Version|Date|Description|
 |:--:|:--:|:--|
+|v1.2.0|2016-02-23|Added `start` event and `count` argument for `finish` event ( see #5 ); |
 |v1.1.2|2015-10-02|fixed is function call|
 |v1.1.1|2015-10-02|added automatic release|
 |v1.1.0|2015-10-02|optimized singing; added `deleteFile( key, rev, cb )` method to delete a file directly from the client.|
