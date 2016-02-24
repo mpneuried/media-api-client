@@ -1,8 +1,1116 @@
 /*
-Media-API Client (1.1.2)
+Media-API Client (1.2.0)
 */
 
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.MediaApiClient = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
+var Base,
+  bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  hasProp = {}.hasOwnProperty;
+
+Base = (function(superClass) {
+  extend(Base, superClass);
+
+  function Base() {
+    this._error = bind(this._error, this);
+    return Base.__super__.constructor.apply(this, arguments);
+  }
+
+  Base.prototype._error = function(cb, err, data) {
+    var _err;
+    if (!(err instanceof Error)) {
+      _err = new Error(err);
+      _err.name = err;
+      try {
+        _err.message = this.ERRORS[err] || " - ";
+      } catch (undefined) {}
+    } else {
+      _err = err;
+    }
+    if (this.listeners("error").length) {
+      this.emit("error", _err, data);
+    } else {
+      console.error(_err, data);
+    }
+    if (cb == null) {
+      throw _err;
+    } else {
+      cb(_err);
+    }
+  };
+
+  return Base;
+
+})(_dereq_('events'));
+
+module.exports = Base;
+
+
+},{"events":8}],2:[function(_dereq_,module,exports){
+var Base, Client, File, FileView, _defauktKeys, _defaults, _k, _v, dom, utils, xhr,
+  bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  hasProp = {}.hasOwnProperty,
+  indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+dom = _dereq_("domel");
+
+xhr = _dereq_("xhr");
+
+utils = _dereq_("./utils");
+
+Base = _dereq_("./base");
+
+File = _dereq_("./file");
+
+FileView = _dereq_("./fileview");
+
+_defaults = {
+  host: null,
+  domain: null,
+  accesskey: null,
+  keyprefix: "clientupload",
+  autostart: true,
+  requestSignFn: null,
+  resultTemplateFn: null,
+  maxsize: 0,
+  maxcount: 0,
+  width: null,
+  height: null,
+  accept: null,
+  ttl: 0,
+  acl: "public-read",
+  properties: null,
+  tags: null,
+  "content-disposition": null,
+  cssdroppable: "dropable",
+  csshover: "hover",
+  cssprocess: "process",
+  cssdisabled: "disabled"
+};
+
+_defauktKeys = (function() {
+  var results;
+  results = [];
+  for (_k in _defaults) {
+    _v = _defaults[_k];
+    results.push(_k);
+  }
+  return results;
+})();
+
+Client = (function(superClass) {
+  extend(Client, superClass);
+
+  Client.prototype.version = "1.2.0";
+
+  Client.prototype._rgxHost = /https?:\/\/[^\/$\s]+/i;
+
+  function Client(drag, elresults, options) {
+    var _html, _htmlData, _inpAccept, _mxcnt, _mxsz, _opt, _tag, i, len, ref, ref1, ref2, ref3, ref4, ref5;
+    if (options == null) {
+      options = {};
+    }
+    this._validateEl = bind(this._validateEl, this);
+    this._checkFinish = bind(this._checkFinish, this);
+    this._calcProgress = bind(this._calcProgress, this);
+    this.onFinish = bind(this.onFinish, this);
+    this.fileDone = bind(this.fileDone, this);
+    this.fileError = bind(this.fileError, this);
+    this.fileProgress = bind(this.fileProgress, this);
+    this.fileStarted = bind(this.fileStarted, this);
+    this.fileNew = bind(this.fileNew, this);
+    this.enable = bind(this.enable, this);
+    this.disable = bind(this.disable, this);
+    this.abortAll = bind(this.abortAll, this);
+    this._defaultRequestSignature = bind(this._defaultRequestSignature, this);
+    this.sign = bind(this.sign, this);
+    this.deleteFile = bind(this.deleteFile, this);
+    this.upload = bind(this.upload, this);
+    this.onLeave = bind(this.onLeave, this);
+    this.onOver = bind(this.onOver, this);
+    this.onHover = bind(this.onHover, this);
+    this.onSelect = bind(this.onSelect, this);
+    this.initFileAPI = bind(this.initFileAPI, this);
+    this.initialize = bind(this.initialize, this);
+    Client.__super__.constructor.apply(this, arguments);
+    this.enabled = true;
+    this.useFileAPI = false;
+    this.on("file.new", this.fileNew);
+    this.on("file.done", this.fileDone);
+    this.on("file.error", this.fileError);
+    this.on("file.invalid", this.fileError);
+    this.on("file.aborted", this.fileError);
+    this.on("finish", this.onFinish);
+    this.within_enter = false;
+    this.el = this._validateEl(drag, "drag");
+    this.sel = this.el.d.find("input" + (options.inputclass || "") + "[type='file']", true);
+    if (this.sel == null) {
+      this._error(null, "missing-select-el");
+      return;
+    }
+    this.formname = this.sel.getAttribute("name");
+    if (elresults != null) {
+      this.res = this._validateEl(elresults, "result");
+    }
+    _htmlData = this.el.d.data();
+    this.options = utils.assign({}, _defaults, _htmlData, options || {});
+    if (!((ref = this.options.host) != null ? ref.length : void 0)) {
+      this._error(null, "missing-host");
+      return;
+    }
+    if (!this._rgxHost.test(this.options.host)) {
+      this._error(null, "invalid-host");
+      return;
+    }
+    if (!((ref1 = this.options.domain) != null ? ref1.length : void 0)) {
+      this._error(null, "missing-domain");
+      return;
+    }
+    if (!((ref2 = this.options.accesskey) != null ? ref2.length : void 0)) {
+      this._error(null, "missing-accesskey");
+      return;
+    }
+    if (this.options.maxcount != null) {
+      _mxcnt = parseInt(this.options.maxcount, 10);
+      if (isNaN(_mxcnt)) {
+        this.options.maxcount = _defaults.maxcount;
+      } else {
+        this.options.maxcount = _mxcnt;
+      }
+    }
+    if (this.options.maxcount !== 1) {
+      this.sel.setAttribute("multiple", "multiple");
+    }
+    if (this.options.maxsize != null) {
+      _mxsz = parseInt(this.options.maxsize, 10);
+      if (isNaN(_mxsz)) {
+        this.options.maxsize = _defaults.maxsize;
+      } else {
+        this.options.maxsize = _mxsz;
+      }
+    }
+    if ((this.options.requestSignFn != null) && typeof this.options.requestSignFn !== "function") {
+      this._error(null, "invalid-requestSignfn");
+      return;
+    }
+    if ((this.options.ttl != null) && !utils.isInt(this.options.ttl)) {
+      this._error(null, "invalid-ttl");
+      return;
+    } else if (this.options.ttl != null) {
+      this.options.ttl = parseInt(this.options.ttl, 10);
+      if (isNaN(this.options.ttl)) {
+        this._error(null, "invalid-ttl");
+        return;
+      }
+    }
+    if ((this.options.tags != null) && utils.isArray(this.options.tags)) {
+      ref3 = this.options.tags;
+      for (i = 0, len = ref3.length; i < len; i++) {
+        _tag = ref3[i];
+        if (!(!utils.isString(_tag))) {
+          continue;
+        }
+        this._error(null, "invalid-tags");
+        return;
+      }
+    } else if (this.options.tags != null) {
+      this._error(null, "invalid-tags");
+      return;
+    }
+    if ((this.options.properties != null) && !utils.isObject(this.options.properties)) {
+      this._error(null, "invalid-properties");
+      return;
+    }
+    if ((this.options["content-disposition"] != null) && !utils.isString(this.options["content-disposition"])) {
+      this._error(null, "invalid-content-disposition");
+      return;
+    }
+    if ((this.options.acl != null) && !utils.isString(this.options.acl) && ((ref4 = this.options.acl) !== "public-read" && ref4 !== "authenticated-read")) {
+      this._error(null, "invalid-acl");
+      return;
+    }
+    if ((this.options.requestSignFn != null) && utils.isFunction(this.options.requestSignFn)) {
+      this._sign = this.options.requestSignFn;
+    } else {
+      this._sign = this._defaultRequestSignature;
+    }
+    _inpAccept = this.sel.getAttribute("accept");
+    if ((this.options.accept != null) || (_inpAccept != null)) {
+      _html = (_inpAccept != null ? _inpAccept.split(",") : void 0) || [];
+      _opt = ((ref5 = this.options.accept) != null ? ref5.split(",") : void 0) || [];
+      if (_html != null ? _html.length : void 0) {
+        this.options.accept = _html;
+      } else if (_opt != null ? _opt.length : void 0) {
+        this.sel.setAttribute("accept", this.options.accept);
+      }
+      this.options.acceptRules = this.generateAcceptRules(this.options.accept);
+    }
+    this.initialize();
+    this.idx_started = 0;
+    this.idx_finished = 0;
+    this.count_last_finished = 0;
+    this.on("file.upload", this.fileStarted);
+    this._currentProgress = {};
+    this.on("file.progress", this.fileProgress);
+    this.el.d.data("mediaapiclient", this);
+    return;
+  }
+
+  Client.prototype.generateAcceptRules = function(accept) {
+    var _rule, _rules, i, len;
+    _rules = [];
+    for (i = 0, len = accept.length; i < len; i++) {
+      _rule = accept[i];
+      if (_rule.indexOf("/") >= 0) {
+        _rules.push((function() {
+          var _regex;
+          _regex = new RegExp((_rule.replace("*", "\\w+")) + "$", "i");
+          return function(file) {
+            return _regex.test(file.type);
+          };
+        })());
+      } else if (_rule.indexOf(".") >= 0) {
+        _rules.push((function() {
+          var _regex;
+          _regex = new RegExp((_rule.replace(".", "\\.")) + "$", "i");
+          return function(file) {
+            return _regex.test(file.name);
+          };
+        })());
+      } else if (_rule === "*") {
+        _rules.push((function(file) {
+          return true;
+        }));
+      }
+    }
+    return _rules;
+  };
+
+  Client.prototype.initialize = function() {
+    if (window.File && window.FileList && window.FileReader) {
+      this.sel.d.on("change", this.onSelect);
+      this.useFileAPI = true;
+      this.initFileAPI();
+    } else {
+
+    }
+  };
+
+  Client.prototype.initFileAPI = function() {
+    var _xhr;
+    _xhr = new XMLHttpRequest();
+    if (_xhr != null ? _xhr.upload : void 0) {
+      this.el.ondragover = this.onHover;
+      this.el.ondragleave = this.onLeave;
+      this.el.ondrop = this.onSelect;
+      this.el.d.addClass(this.options.cssdroppable);
+    } else {
+
+    }
+  };
+
+  Client.prototype.onSelect = function(evnt) {
+    var files, ref, ref1, ref2, ref3, ref4, ref5;
+    evnt.preventDefault();
+    if (!this.enabled) {
+      return;
+    }
+    if (this.options.maxcount <= 0 || this.idx_started < this.options.maxcount) {
+      this.el.d.removeClass(this.options.csshover);
+      this.el.d.addClass(this.options.cssprocess);
+      files = ((ref = evnt.target) != null ? ref.files : void 0) || ((ref1 = evnt.originalEvent) != null ? (ref2 = ref1.target) != null ? ref2.files : void 0 : void 0) || ((ref3 = evnt.dataTransfer) != null ? ref3.files : void 0) || ((ref4 = evnt.originalEvent) != null ? (ref5 = ref4.dataTransfer) != null ? ref5.files : void 0 : void 0);
+      this.upload(files);
+    } else {
+      this.el.d.removeClass(this.options.csshover);
+      this.disable();
+    }
+  };
+
+  Client.prototype.onHover = function(evnt) {
+    evnt.preventDefault();
+    if (!this.enabled) {
+      return;
+    }
+    this.emit("file.hover");
+    this.within_enter = true;
+    setTimeout(((function(_this) {
+      return function() {
+        return _this.within_enter = false;
+      };
+    })(this)), 0);
+    this.el.d.addClass(this.options.csshover);
+  };
+
+  Client.prototype.onOver = function(evnt) {
+    evnt.preventDefault();
+    if (!this.enabled) {
+      return;
+    }
+  };
+
+  Client.prototype.onLeave = function(evnt) {
+    if (!this.enabled) {
+      return;
+    }
+    if (!this.within_enter) {
+      this.el.d.removeClass(this.options.csshover);
+    }
+  };
+
+  Client.prototype.upload = function(files) {
+    var file, i, idx, len;
+    if (files.length > 10) {
+      this.setMaxListeners(files.length);
+    }
+    if (this.useFileAPI) {
+      for (idx = i = 0, len = files.length; i < len; idx = ++i) {
+        file = files[idx];
+        if (this.enabled) {
+          if (this.options.maxcount <= 0 || this.idx_started < this.options.maxcount) {
+            this.idx_started++;
+            new File(file, this.idx_started, this, this.options);
+          } else {
+            this.disable();
+          }
+        }
+      }
+    }
+  };
+
+  Client.prototype.deleteFile = function(key, rev, cb) {
+    var _url;
+    _url = this.options.host + this.options.domain + ("/" + key + "?revision=" + rev);
+    this.sign({
+      url: _url,
+      key: key
+    }, (function(_this) {
+      return function(err, surl, signature) {
+        if (err) {
+          cb(err);
+          return;
+        }
+        xhr({
+          url: surl,
+          method: "DELETE"
+        }, function(err, resp, body) {
+          if (err) {
+            cb(err);
+            return;
+          }
+          cb(null, body);
+        });
+      };
+    })(this));
+  };
+
+  Client.prototype.sign = function(opt, cb) {
+    var _opt, ref, ref1;
+    _opt = utils.assign({}, {
+      domain: this.options.domain,
+      accesskey: this.options.accesskey,
+      json: null,
+      url: null,
+      key: null
+    }, opt);
+    if (!((ref = _opt.url) != null ? ref.length : void 0)) {
+      this._error(cb, "invalid-sign-url");
+      return;
+    }
+    if (!((ref1 = _opt.key) != null ? ref1.length : void 0)) {
+      this._error(cb, "invalid-sign-key");
+      return;
+    }
+    this._sign(_opt.domain, _opt.accesskey, _opt.url, _opt.key, _opt.json, function(err, signature) {
+      var _surl;
+      if (err) {
+        cb(err);
+        return;
+      }
+      _surl = _opt.url;
+      if (_surl.indexOf("?") >= 0) {
+        _surl += "&";
+      } else {
+        _surl += "?";
+      }
+      _surl += "signature=" + encodeURIComponent(signature);
+      cb(null, _surl, signature);
+    });
+  };
+
+  Client.prototype._defaultRequestSignature = function(domain, accesskey, madiaapiurl, key, json, cb) {
+    var _url, _xhr, data;
+    _url = this.options.host + domain + "/sign/" + accesskey;
+    _xhr = new window.XMLHttpRequest();
+    data = new FormData();
+    data.append("url", madiaapiurl);
+    data.append("key", key);
+    if (json != null) {
+      data.append("json", JSON.stringify(json));
+    }
+    xhr({
+      xhr: _xhr,
+      method: "POST",
+      url: _url,
+      body: data
+    }, function(err, resp, signature) {
+      if (err) {
+        console.error("get sign error", err);
+        cb(err);
+        return;
+      }
+      cb(null, signature);
+    });
+  };
+
+  Client.prototype.abortAll = function() {
+    this.emit("abortAll");
+  };
+
+  Client.prototype.disable = function() {
+    this.sel.setAttribute("disabled", "disabled");
+    this.el.d.addClass(this.options.cssdisabled);
+    this.enabled = false;
+  };
+
+  Client.prototype.enable = function() {
+    this.sel.removeAttribute("disabled");
+    this.el.d.removeClass(this.options.cssdisabled);
+    this.enabled = true;
+  };
+
+  Client.prototype.fileNew = function(file) {
+    var _fileview;
+    if (this.res != null) {
+      _fileview = new FileView(file, this, this.options);
+      this.res.d.append(_fileview.render());
+    }
+  };
+
+  Client.prototype.fileStarted = function(file) {
+    this._currentProgress[file.idx] = 0;
+    if (this._running) {
+      return;
+    }
+    this._running = true;
+    this.emit("start");
+  };
+
+  Client.prototype.fileProgress = function(file, precent) {
+    if ((this._currentProgress[file.idx] == null) || this._currentProgress[file.idx] >= 0) {
+      this._currentProgress[file.idx] = precent;
+    }
+    this._calcProgress();
+  };
+
+  Client.prototype.fileError = function(file, err) {
+    if (this.listeners("error").length) {
+      this.emit("error", err, file);
+    } else {
+      console.error("FILE-ERROR", file, err);
+    }
+    if (!file._errored) {
+      this._currentProgress[file.idx] = -1;
+      this.idx_finished++;
+      this._checkFinish();
+    }
+    file._errored = true;
+  };
+
+  Client.prototype.fileDone = function(file) {
+    this._currentProgress[file.idx] = 100;
+    this.idx_finished++;
+    this._checkFinish();
+  };
+
+  Client.prototype.onFinish = function() {
+    this.el.d.removeClass(this.options.cssprocess);
+  };
+
+  Client.prototype._calcProgress = function() {
+    var _count, _done, _failed, _idx, _precCumu, _running, _waiting, prec, ref;
+    _running = 0;
+    _waiting = 0;
+    _done = 0;
+    _failed = 0;
+    _precCumu = 0;
+    _count = 0;
+    ref = this._currentProgress;
+    for (_idx in ref) {
+      prec = ref[_idx];
+      _count++;
+      if (prec < 0) {
+        _failed++;
+        _precCumu += 100;
+        continue;
+      }
+      if (prec === 0) {
+        _waiting++;
+        continue;
+      }
+      if (prec < 100) {
+        _running++;
+        _precCumu += prec;
+        continue;
+      }
+      if (prec === 100) {
+        _done++;
+        _precCumu += 100;
+      }
+    }
+    this.emit("progress", _precCumu / _count, [_waiting, _running, _done, _failed], _count);
+  };
+
+  Client.prototype._checkFinish = function() {
+    if (this.idx_finished >= this.idx_started) {
+      this._running = false;
+      this._currentProgress = {};
+      this.emit("finish", this.idx_finished - this.count_last_finished);
+      this.count_last_finished = this.idx_finished;
+      if (this.options.maxcount > 0 && this.idx_started >= this.options.maxcount) {
+        this.disable();
+      }
+    }
+  };
+
+  Client.prototype._validateEl = function(el, type) {
+    var _el;
+    if (el == null) {
+      this._error(null, "missing-" + type + "-el");
+      return;
+    }
+    switch (typeof el) {
+      case "string":
+        _el = dom(el, null, true);
+        break;
+      case "object":
+        if (el instanceof HTMLElement) {
+          _el = dom.domel(el);
+        }
+    }
+    if (_el == null) {
+      this._error(null, "invalid-" + type + "-el");
+      return;
+    }
+    return _el;
+  };
+
+  Client.prototype.ERRORS = {
+    "missing-select-el": "Missing select element. Please define a valid element as a Selector, DOM-node",
+    "invalid-select-el": "Invalid select element. Please define a valid element as a Selector, DOM-node",
+    "missing-drag-el": "Missing drag element. Please define a valid element as a Selector, DOM-node",
+    "invalid-drag-el": "Invalid drag element. Please define a valid element as a Selector, DOM-node",
+    "missing-host": "Missing host. You have to defien a host as url starting with `http://` or `https://`.",
+    "invalid-host": "Invalid host. You have to defien a host as url starting with `http://` or `https://`.",
+    "missing-domain": "Missing domain. You have to define a domain.",
+    "missing-accesskey": "Missing accesskey. You have to define a accesskey.",
+    "missing-keyprefix": "Missing keyprefix. You have to define a keyprefix.",
+    "invalid-sign-url": "please define a `url` to sign the request",
+    "invalid-sign-key": "please define a `key` to sign the request",
+    "invalid-ttl": "for the option `ttl` only a positiv number is allowed",
+    "invalid-tags": "for the option `tags` only an array of strings is allowed",
+    "invalid-properties": "for the option `properties` only an object is allowed",
+    "invalid-content-disposition": "for the option `content-disposition` only an string like: `attachment; filename=friendly_filename.pdf` is allowed",
+    "invalid-acl": "the option acl only accepts the string `public-read` or `authenticated-read`"
+  };
+
+  return Client;
+
+})(Base);
+
+Client.defaults = function(options) {
+  for (_k in options) {
+    _v = options[_k];
+    if (indexOf.call(_defauktKeys, _k) >= 0) {
+      _defaults[_k] = _v;
+    }
+  }
+  return _defaults;
+};
+
+module.exports = Client;
+
+
+},{"./base":1,"./file":3,"./fileview":4,"./utils":6,"domel":7,"xhr":9}],3:[function(_dereq_,module,exports){
+var File, xhr,
+  bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  hasProp = {}.hasOwnProperty;
+
+xhr = _dereq_("xhr");
+
+File = (function(superClass) {
+  extend(File, superClass);
+
+  File.prototype.states = ["new", "start", "signed", "upload", "progress", "done", "invalid", "error", "aborted"];
+
+  function File(file, idx, client, options) {
+    var ref;
+    this.file = file;
+    this.idx = idx;
+    this.client = client;
+    this.options = options;
+    this._handleProgress = bind(this._handleProgress, this);
+    this._upload = bind(this._upload, this);
+    this._sign = bind(this._sign, this);
+    this._testMime = bind(this._testMime, this);
+    this._validate = bind(this._validate, this);
+    this._setState = bind(this._setState, this);
+    this.getData = bind(this.getData, this);
+    this.getType = bind(this.getType, this);
+    this.getName = bind(this.getName, this);
+    this.getProgress = bind(this.getProgress, this);
+    this.getResult = bind(this.getResult, this);
+    this.getState = bind(this.getState, this);
+    this.abort = bind(this.abort, this);
+    this.start = bind(this.start, this);
+    File.__super__.constructor.apply(this, arguments);
+    this.state = 0;
+    this.validation = [];
+    this.key = this.options.keyprefix + "_" + this.getName().replace(this._rgxFile2Key, "") + "_" + this._now() + "_" + this.idx;
+    this.client.emit("file.new", this);
+    this.client.on("abortAll", this.abort);
+    this.on("start", this.start);
+    this.on("signed", this._upload);
+    if (!((ref = this.options.keyprefix) != null ? ref.length : void 0)) {
+      this.options.keyprefix = "clientupload";
+    }
+    if (this.options.autostart == null) {
+      this.options.autostart = true;
+    }
+    this._validate();
+    if (this.options.autostart) {
+      this.emit("start");
+    }
+    return;
+  }
+
+  File.prototype.start = function() {
+    if (this.state <= 0) {
+      this._setState(1);
+      this.client.emit("file.upload", this);
+      this._sign();
+    }
+    return this;
+  };
+
+  File.prototype.abort = function() {
+    var ref;
+    if (this.state <= 4) {
+      this._setState(8);
+      if ((ref = this.requestUpload) != null) {
+        ref.abort();
+      }
+      this.emit("aborted");
+      this.client.emit("file.aborted", this);
+    }
+    return this;
+  };
+
+  File.prototype.getState = function() {
+    return this.states[this.state];
+  };
+
+  File.prototype.getResult = function() {
+    if (this.state === 5 && (this.data != null)) {
+      return {
+        url: this.data.url,
+        hash: this.data.filehash,
+        key: this.data.key,
+        type: this.data.content_type
+      };
+    }
+    return null;
+  };
+
+  File.prototype.getProgress = function(asFactor) {
+    var _fac;
+    if (asFactor == null) {
+      asFactor = false;
+    }
+    if (this.state < 4) {
+      _fac = 0;
+    } else if (this.state > 4) {
+      _fac = 1;
+    } else {
+      _fac = this.progressState;
+    }
+    if (asFactor) {
+      return _fac;
+    } else {
+      return Math.round(_fac * 100);
+    }
+  };
+
+  File.prototype.getName = function() {
+    return this.file.name;
+  };
+
+  File.prototype.getType = function() {
+    return this.file.type;
+  };
+
+  File.prototype.getData = function() {
+    var _ret;
+    _ret = {
+      name: this.client.formname,
+      filename: this.getName(),
+      idx: this.idx,
+      state: this.getState(),
+      progress: this.getProgress(),
+      result: this.getResult(),
+      options: this.options,
+      invalid_reason: this.validation,
+      error: this.error
+    };
+    return _ret;
+  };
+
+  File.prototype._setState = function(state) {
+    if (state > this.state) {
+      this.state = state;
+      this.emit("state", this.getState());
+    }
+    if (this.state >= this.states.indexOf("done")) {
+      this.client.removeListener("abortAll", this.abort);
+    }
+    return state;
+  };
+
+  File.prototype._validate = function() {
+    var _size, ref;
+    _size = this.file.size / 1024;
+    if (this.options.maxsize > 0 && this.options.maxsize < _size) {
+      this.validation.push("maxsize");
+    }
+    if (((ref = this.options.acceptRules) != null ? ref.length : void 0) && !this._testMime(this.options.acceptRules)) {
+      this.validation.push("accept");
+    }
+    if (this.validation.length) {
+      this._setState(6);
+      this.emit("invalid", this.validation);
+      this.client.emit("file.invalid", this, this.validation);
+      return false;
+    }
+    return true;
+  };
+
+  File.prototype._testMime = function(acceptRules) {
+    var _rule, i, len;
+    for (i = 0, len = acceptRules.length; i < len; i++) {
+      _rule = acceptRules[i];
+      if (_rule(this.file)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  File.prototype._now = function() {
+    return Math.round(Date.now() / 1000);
+  };
+
+  File.prototype._rgxFile2Key = /([^A-Za-z0-9])/ig;
+
+  File.prototype._sign = function() {
+    var _content_type, _name;
+    _name = this.getName();
+    _content_type = this.getType();
+    if (this.state > 1) {
+      return;
+    }
+    this.url = this.options.host + this.options.domain + "/" + this.key;
+    this.json = {
+      blob: true,
+      acl: this.options.acl,
+      ttl: this.options.ttl,
+      properties: {
+        filename: _name
+      }
+    };
+    if (this.options.width != null) {
+      this.json.width = this.options.width;
+    }
+    if (this.options.height != null) {
+      this.json.height = this.options.height;
+    }
+    if (this.options.tags != null) {
+      this.json.tags = this.options.tags;
+    }
+    if (this.options.properties != null) {
+      this.json.properties = this.options.properties;
+    }
+    if (this.options["content-disposition"] != null) {
+      this.json["content-disposition"] = this.options["content-disposition"];
+    }
+    if (_content_type != null ? _content_type.length : void 0) {
+      this.json.content_type = _content_type;
+    }
+    this.emit("content", this.key, this.json);
+    this.client.emit("file.content", this, this.key, this.json);
+    this.client.sign.call(this, {
+      url: this.url,
+      key: this.key,
+      json: this.json
+    }, (function(_this) {
+      return function(err, url) {
+        _this.url = url;
+        if (err) {
+          _this.error = err;
+          _this._setState(7);
+          _this.emit("error", err);
+          _this.client.emit("file.error", _this, err);
+          return;
+        }
+        _this._setState(2);
+        _this.emit("signed");
+      };
+    })(this));
+  };
+
+  File.prototype._upload = function() {
+    var _xhr, data, ref;
+    if (this.state > 2) {
+      return;
+    }
+    this._setState(3);
+    data = new FormData();
+    data.append("JSON", JSON.stringify(this.json));
+    data.append("blob", this.file);
+    _xhr = new window.XMLHttpRequest();
+    if ((ref = _xhr.upload) != null) {
+      ref.addEventListener("progress", this._handleProgress(), false);
+    }
+    _xhr.addEventListener("progress", this._handleProgress(), false);
+    _xhr._isfile = true;
+    this.requestUpload = xhr({
+      xhr: _xhr,
+      url: this.url,
+      method: "POST",
+      data: data
+    }, (function(_this) {
+      return function(err, resp, body) {
+        var _data;
+        if (err) {
+          _this._setState(7);
+          _this.progressState = 0;
+          _this.error = err;
+          _this.emit("error", err);
+          _this.client.emit("file.error", _this, err);
+          return;
+        }
+        _data = JSON.parse(body);
+        if (resp.statusCode >= 300) {
+          _this._setState(7);
+          _this.progressState = 0;
+          _this.error = _data;
+          _this.emit("error", _data);
+          _this.client.emit("file.error", _this, _data);
+          return;
+        }
+        _this.data = _data != null ? _data.rows[0] : void 0;
+        _this.progressState = 1;
+        _this._setState(5);
+        _this.emit("done", _this.data);
+        _this.client.emit("file.done", _this);
+      };
+    })(this));
+  };
+
+  File.prototype._handleProgress = function() {
+    return (function(_this) {
+      return function(evnt) {
+        var _progress;
+        if (evnt.target.method == null) {
+          _this.progressState = evnt.loaded / evnt.total;
+          _this._setState(4);
+          _progress = _this.getProgress();
+          _this.emit("progress", _progress, evnt);
+          _this.client.emit("file.progress", _this, _progress);
+          return;
+        }
+      };
+    })(this);
+  };
+
+  return File;
+
+})(_dereq_("./base"));
+
+module.exports = File;
+
+
+},{"./base":1,"xhr":9}],4:[function(_dereq_,module,exports){
+var FileView, dom,
+  bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  hasProp = {}.hasOwnProperty;
+
+dom = _dereq_("domel");
+
+FileView = (function(superClass) {
+  extend(FileView, superClass);
+
+  function FileView(fileObj, client, options) {
+    this.fileObj = fileObj;
+    this.client = client;
+    this.options = options;
+    this.update = bind(this.update, this);
+    this.render = bind(this.render, this);
+    FileView.__super__.constructor.apply(this, arguments);
+    if ((this.options.resultTemplateFn != null) && typeof this.options.resultTemplateFn === "function") {
+      this.template = this.options.resultTemplateFn;
+    } else {
+      this.template = this._defaultTemplate;
+    }
+    if (this.options.cssfileelement != null) {
+      this.resultClass = this.options.cssfileelement;
+    } else {
+      this.resultClass = "file col-sm-6 col-md-4";
+    }
+    this.fileObj.on("progress", this.update());
+    this.fileObj.on("done", this.update());
+    this.fileObj.on("error", this.update());
+    this.fileObj.on("invalid", this.update());
+    return;
+  }
+
+  FileView.prototype.render = function() {
+    this.el = dom.create("div", {
+      "class": this.resultClass
+    });
+    this.el.innerHTML = this.template(this.fileObj.getData());
+    return this.el;
+  };
+
+  FileView.prototype.update = function() {
+    return (function(_this) {
+      return function(evnt) {
+        _this.el.innerHTML = _this.template(_this.fileObj.getData());
+      };
+    })(this);
+  };
+
+  FileView.prototype._defaultTemplate = function(data) {
+    var _html, _k, _reason, _v, i, len, ref, ref1;
+    _html = "<div class=\"thumbnail state-" + data.state + "\">\n	<b>" + data.filename + "</b>";
+    switch (data.state) {
+      case "progress":
+        _html += "<div class=\"progress\">\n	<div class=\"progress-bar\" role=\"progressbar\" aria-valuenow=\"" + data.progress + "\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: " + data.progress + "%;\">\n		<span>" + data.progress + "%</span>\n	</div>\n</div>";
+        break;
+      case "done":
+        _html += "<div class=\"result\">\n	<a href=\"" + data.result.url + "\" target=\"_new\">Fertig! ( " + data.result.key + " )</a>";
+        ref = data.result;
+        for (_k in ref) {
+          _v = ref[_k];
+          _html += "<input type=\"hidden\" name=\"" + data.name + "_" + data.idx + "_" + _k + "\" value=\"" + _v + "\">";
+        }
+        _html += "</div>";
+        break;
+      case "invalid":
+        _html += "<div class=\"result\">\n	<b>Invalid</b>";
+        ref1 = data.invalid_reason;
+        for (i = 0, len = ref1.length; i < len; i++) {
+          _reason = ref1[i];
+          switch (_reason) {
+            case "maxsize":
+              _html += "<div class=\"alert alert-error\">File too big. Only files until " + data.options.maxsize + "kb are allowed.</div>";
+              break;
+            case "accept":
+              _html += "<div class=\"alert alert-error\">Wrong type. Only files of type " + (data.options.accept.join(", ")) + " are allowed.</div>";
+          }
+          _html += "</div>";
+        }
+        break;
+      case "error":
+        _html += "<div class=\"alert alert-error\">An Error occured.</div>";
+        break;
+      case "aborted":
+        _html += "<div class=\"alert alert-error\">Upload aborted.</div>";
+    }
+    _html += "</div>";
+    return _html;
+  };
+
+  return FileView;
+
+})(_dereq_("./base"));
+
+module.exports = FileView;
+
+
+},{"./base":1,"domel":7}],5:[function(_dereq_,module,exports){
+var Base, Client, File, FileView;
+
+Base = _dereq_("./base");
+
+File = _dereq_("./file");
+
+FileView = _dereq_("./fileview");
+
+Client = _dereq_("./client");
+
+Client.Base = Base;
+
+Client.File = File;
+
+Client.FileView = FileView;
+
+module.exports = Client;
+
+
+},{"./base":1,"./client":2,"./file":3,"./fileview":4}],6:[function(_dereq_,module,exports){
+var _intRegex, assign, isArray, isFunction, isInt, isObject, isString,
+  slice = [].slice;
+
+isObject = function(vr) {
+  return vr !== null && typeof vr === 'object';
+};
+
+isArray = function(vr) {
+  return Object.prototype.toString.call(vr) === '[object Array]';
+};
+
+isString = function(vr) {
+  return typeof vr === 'string' || vr instanceof String;
+};
+
+_intRegex = /^\d+$/;
+
+isInt = function(vr) {
+  return _intRegex.test(vr);
+};
+
+isFunction = function(object) {
+  return typeof object === 'function';
+};
+
+assign = function() {
+  var _k, _v, i, len, src, srcs, tgrt;
+  tgrt = arguments[0], srcs = 2 <= arguments.length ? slice.call(arguments, 1) : [];
+  for (i = 0, len = srcs.length; i < len; i++) {
+    src = srcs[i];
+    if (isObject(src)) {
+      for (_k in src) {
+        _v = src[_k];
+        tgrt[_k] = _v;
+      }
+    }
+  }
+  return tgrt;
+};
+
+module.exports = {
+  isArray: isArray,
+  isObject: isObject,
+  isString: isString,
+  isFunction: isFunction,
+  isInt: isInt,
+  assign: assign
+};
+
+
+},{}],7:[function(_dereq_,module,exports){
 (function (global){
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.domel = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof _dereq_=="function"&&_dereq_;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof _dereq_=="function"&&_dereq_;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 var addD, addDWrap, domHelper, isString, nonAutoAttach,
@@ -358,7 +1466,7 @@ domHelper.prepend = function(el, html) {
     el.insertBefore(child, _latestFirst);
     _latestFirst = child;
   }
-  return addD(el);
+  return el;
 };
 
 domHelper.remove = function(el) {
@@ -375,12 +1483,7 @@ domHelper.remove = function(el) {
       i--;
     }
   }
-  return addD(el);
-};
-
-domHelper.empty = function(el) {
-  el.innerHTML = "";
-  return addD(el);
+  return el;
 };
 
 domHelper.replaceWith = function(el, elToRepl) {
@@ -434,1031 +1537,6 @@ module.exports = domHelper;
 },{}]},{},[1])(1)
 });
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],2:[function(_dereq_,module,exports){
-var Base,
-  bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  hasProp = {}.hasOwnProperty;
-
-Base = (function(superClass) {
-  extend(Base, superClass);
-
-  function Base() {
-    this._error = bind(this._error, this);
-    return Base.__super__.constructor.apply(this, arguments);
-  }
-
-  Base.prototype._error = function(cb, err) {
-    var _err;
-    if (!(err instanceof Error)) {
-      _err = new Error(err);
-      _err.name = err;
-      try {
-        _err.message = this.ERRORS[err] || " - ";
-      } catch (undefined) {}
-    } else {
-      _err = err;
-    }
-    if (cb == null) {
-      throw _err;
-    } else {
-      cb(_err);
-    }
-  };
-
-  return Base;
-
-})(_dereq_('events'));
-
-module.exports = Base;
-
-
-},{"events":8}],3:[function(_dereq_,module,exports){
-var Base, Client, File, FileView, _defauktKeys, _defaults, _k, _v, dom, utils, xhr,
-  bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  hasProp = {}.hasOwnProperty,
-  indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
-
-dom = _dereq_("domel");
-
-xhr = _dereq_("xhr");
-
-utils = _dereq_("./utils");
-
-Base = _dereq_("./base");
-
-File = _dereq_("./file");
-
-FileView = _dereq_("./fileview");
-
-_defaults = {
-  host: null,
-  domain: null,
-  accesskey: null,
-  keyprefix: "clientupload",
-  autostart: true,
-  requestSignFn: null,
-  resultTemplateFn: null,
-  maxsize: 0,
-  maxcount: 0,
-  width: null,
-  height: null,
-  accept: null,
-  ttl: 0,
-  acl: "public-read",
-  properties: null,
-  tags: null,
-  "content-disposition": null,
-  cssdroppable: "dropable",
-  csshover: "hover",
-  cssprocess: "process",
-  cssdisabled: "disabled"
-};
-
-_defauktKeys = (function() {
-  var results;
-  results = [];
-  for (_k in _defaults) {
-    _v = _defaults[_k];
-    results.push(_k);
-  }
-  return results;
-})();
-
-Client = (function(superClass) {
-  extend(Client, superClass);
-
-  Client.prototype.version = "1.1.2";
-
-  Client.prototype._rgxHost = /https?:\/\/[^\/$\s]+/i;
-
-  function Client(drag, elresults, options) {
-    var _html, _htmlData, _inpAccept, _mxcnt, _mxsz, _opt, _tag, i, len, ref, ref1, ref2, ref3, ref4, ref5;
-    if (options == null) {
-      options = {};
-    }
-    this._validateEl = bind(this._validateEl, this);
-    this._checkFinish = bind(this._checkFinish, this);
-    this.onFinish = bind(this.onFinish, this);
-    this.fileNew = bind(this.fileNew, this);
-    this.fileError = bind(this.fileError, this);
-    this.fileDone = bind(this.fileDone, this);
-    this.enable = bind(this.enable, this);
-    this.disable = bind(this.disable, this);
-    this.abortAll = bind(this.abortAll, this);
-    this._defaultRequestSignature = bind(this._defaultRequestSignature, this);
-    this.sign = bind(this.sign, this);
-    this.deleteFile = bind(this.deleteFile, this);
-    this.upload = bind(this.upload, this);
-    this.onLeave = bind(this.onLeave, this);
-    this.onOver = bind(this.onOver, this);
-    this.onHover = bind(this.onHover, this);
-    this.onSelect = bind(this.onSelect, this);
-    this.initFileAPI = bind(this.initFileAPI, this);
-    this.initialize = bind(this.initialize, this);
-    Client.__super__.constructor.apply(this, arguments);
-    this.enabled = true;
-    this.useFileAPI = false;
-    this.on("file.new", this.fileNew);
-    this.on("file.done", this.fileDone);
-    this.on("file.error", this.fileError);
-    this.on("file.invalid", this.fileError);
-    this.on("file.aborted", this.fileError);
-    this.on("finish", this.onFinish);
-    this.within_enter = false;
-    this.el = this._validateEl(drag, "drag");
-    this.sel = this.el.d.find("input" + (options.inputclass || "") + "[type='file']", true);
-    if (this.sel == null) {
-      this._error(null, "missing-select-el");
-      return;
-    }
-    this.formname = this.sel.getAttribute("name");
-    if (elresults != null) {
-      this.res = this._validateEl(elresults, "result");
-    }
-    _htmlData = this.el.d.data();
-    this.options = utils.assign({}, _defaults, _htmlData, options || {});
-    if (!((ref = this.options.host) != null ? ref.length : void 0)) {
-      this._error(null, "missing-host");
-      return;
-    }
-    if (!this._rgxHost.test(this.options.host)) {
-      this._error(null, "invalid-host");
-      return;
-    }
-    if (!((ref1 = this.options.domain) != null ? ref1.length : void 0)) {
-      this._error(null, "missing-domain");
-      return;
-    }
-    if (!((ref2 = this.options.accesskey) != null ? ref2.length : void 0)) {
-      this._error(null, "missing-accesskey");
-      return;
-    }
-    if (this.options.maxcount != null) {
-      _mxcnt = parseInt(this.options.maxcount, 10);
-      if (isNaN(_mxcnt)) {
-        this.options.maxcount = _defaults.maxcount;
-      } else {
-        this.options.maxcount = _mxcnt;
-      }
-    }
-    if (this.options.maxcount !== 1) {
-      this.sel.setAttribute("multiple", "multiple");
-    }
-    if (this.options.maxsize != null) {
-      _mxsz = parseInt(this.options.maxsize, 10);
-      if (isNaN(_mxsz)) {
-        this.options.maxsize = _defaults.maxsize;
-      } else {
-        this.options.maxsize = _mxsz;
-      }
-    }
-    if ((this.options.requestSignFn != null) && typeof this.options.requestSignFn !== "function") {
-      this._error(null, "invalid-requestSignfn");
-      return;
-    }
-    if ((this.options.ttl != null) && !utils.isInt(this.options.ttl)) {
-      this._error(null, "invalid-ttl");
-      return;
-    } else if (this.options.ttl != null) {
-      this.options.ttl = parseInt(this.options.ttl, 10);
-      if (isNaN(this.options.ttl)) {
-        this._error(null, "invalid-ttl");
-        return;
-      }
-    }
-    if ((this.options.tags != null) && utils.isArray(this.options.tags)) {
-      ref3 = this.options.tags;
-      for (i = 0, len = ref3.length; i < len; i++) {
-        _tag = ref3[i];
-        if (!(!utils.isString(_tag))) {
-          continue;
-        }
-        this._error(null, "invalid-tags");
-        return;
-      }
-    } else if (this.options.tags != null) {
-      this._error(null, "invalid-tags");
-      return;
-    }
-    if ((this.options.properties != null) && !utils.isObject(this.options.properties)) {
-      this._error(null, "invalid-properties");
-      return;
-    }
-    if ((this.options["content-disposition"] != null) && !utils.isString(this.options["content-disposition"])) {
-      this._error(null, "invalid-content-disposition");
-      return;
-    }
-    if ((this.options.acl != null) && !utils.isString(this.options.acl) && ((ref4 = this.options.acl) !== "public-read" && ref4 !== "authenticated-read")) {
-      this._error(null, "invalid-acl");
-      return;
-    }
-    if ((this.options.requestSignFn != null) && utils.isFunction(this.options.requestSignFn)) {
-      this._sign = this.options.requestSignFn;
-    } else {
-      this._sign = this._defaultRequestSignature;
-    }
-    _inpAccept = this.sel.getAttribute("accept");
-    if ((this.options.accept != null) || (_inpAccept != null)) {
-      _html = (_inpAccept != null ? _inpAccept.split(",") : void 0) || [];
-      _opt = ((ref5 = this.options.accept) != null ? ref5.split(",") : void 0) || [];
-      if (_html != null ? _html.length : void 0) {
-        this.options.accept = _html;
-      } else if (_opt != null ? _opt.length : void 0) {
-        this.sel.setAttribute("accept", this.options.accept);
-      }
-      this.options.acceptRules = this.generateAcceptRules(this.options.accept);
-    }
-    this.initialize();
-    this.idx_started = 0;
-    this.idx_finished = 0;
-    this.el.d.data("mediaapiclient", this);
-    return;
-  }
-
-  Client.prototype.generateAcceptRules = function(accept) {
-    var _rule, _rules, i, len;
-    _rules = [];
-    for (i = 0, len = accept.length; i < len; i++) {
-      _rule = accept[i];
-      if (_rule.indexOf("/") >= 0) {
-        _rules.push((function() {
-          var _regex;
-          _regex = new RegExp((_rule.replace("*", "\\w+")) + "$", "i");
-          return function(file) {
-            return _regex.test(file.type);
-          };
-        })());
-      } else if (_rule.indexOf(".") >= 0) {
-        _rules.push((function() {
-          var _regex;
-          _regex = new RegExp((_rule.replace(".", "\\.")) + "$", "i");
-          return function(file) {
-            return _regex.test(file.name);
-          };
-        })());
-      } else if (_rule === "*") {
-        _rules.push((function(file) {
-          return true;
-        }));
-      }
-    }
-    return _rules;
-  };
-
-  Client.prototype.initialize = function() {
-    if (window.File && window.FileList && window.FileReader) {
-      this.sel.d.on("change", this.onSelect);
-      this.useFileAPI = true;
-      this.initFileAPI();
-    } else {
-
-    }
-  };
-
-  Client.prototype.initFileAPI = function() {
-    var _xhr;
-    _xhr = new XMLHttpRequest();
-    if (_xhr != null ? _xhr.upload : void 0) {
-      this.el.ondragover = this.onHover;
-      this.el.ondragleave = this.onLeave;
-      this.el.ondrop = this.onSelect;
-      this.el.d.addClass(this.options.cssdroppable);
-    } else {
-
-    }
-  };
-
-  Client.prototype.onSelect = function(evnt) {
-    var files, ref, ref1, ref2, ref3, ref4, ref5;
-    evnt.preventDefault();
-    if (!this.enabled) {
-      return;
-    }
-    if (this.options.maxcount <= 0 || this.idx_started < this.options.maxcount) {
-      this.el.d.removeClass(this.options.csshover);
-      this.el.d.addClass(this.options.cssprocess);
-      files = ((ref = evnt.target) != null ? ref.files : void 0) || ((ref1 = evnt.originalEvent) != null ? (ref2 = ref1.target) != null ? ref2.files : void 0 : void 0) || ((ref3 = evnt.dataTransfer) != null ? ref3.files : void 0) || ((ref4 = evnt.originalEvent) != null ? (ref5 = ref4.dataTransfer) != null ? ref5.files : void 0 : void 0);
-      this.upload(files);
-    } else {
-      this.el.d.removeClass(this.options.csshover);
-      this.disable();
-    }
-  };
-
-  Client.prototype.onHover = function(evnt) {
-    evnt.preventDefault();
-    if (!this.enabled) {
-      return;
-    }
-    this.emit("file.hover");
-    this.within_enter = true;
-    setTimeout(((function(_this) {
-      return function() {
-        return _this.within_enter = false;
-      };
-    })(this)), 0);
-    this.el.d.addClass(this.options.csshover);
-  };
-
-  Client.prototype.onOver = function(evnt) {
-    evnt.preventDefault();
-    if (!this.enabled) {
-      return;
-    }
-  };
-
-  Client.prototype.onLeave = function(evnt) {
-    if (!this.enabled) {
-      return;
-    }
-    if (!this.within_enter) {
-      this.el.d.removeClass(this.options.csshover);
-    }
-  };
-
-  Client.prototype.upload = function(files) {
-    var file, i, idx, len;
-    if (this.useFileAPI) {
-      for (idx = i = 0, len = files.length; i < len; idx = ++i) {
-        file = files[idx];
-        if (this.enabled) {
-          if (this.options.maxcount <= 0 || this.idx_started < this.options.maxcount) {
-            this.idx_started++;
-            new File(file, this.idx_started, this, this.options);
-          } else {
-            this.disable();
-          }
-        }
-      }
-    }
-  };
-
-  Client.prototype.deleteFile = function(key, rev, cb) {
-    var _url;
-    _url = this.options.host + this.options.domain + ("/" + key + "?revision=" + rev);
-    this.sign({
-      url: _url,
-      key: key
-    }, (function(_this) {
-      return function(err, surl, signature) {
-        if (err) {
-          cb(err);
-          return;
-        }
-        xhr({
-          url: surl,
-          method: "DELETE"
-        }, function(err, resp, body) {
-          if (err) {
-            cb(err);
-            return;
-          }
-          cb(null, body);
-        });
-      };
-    })(this));
-  };
-
-  Client.prototype.sign = function(opt, cb) {
-    var _opt, ref, ref1;
-    _opt = utils.assign({}, {
-      domain: this.options.domain,
-      accesskey: this.options.accesskey,
-      json: null,
-      url: null,
-      key: null
-    }, opt);
-    if (!((ref = _opt.url) != null ? ref.length : void 0)) {
-      this._error(cb, "invalid-sign-url");
-      return;
-    }
-    if (!((ref1 = _opt.key) != null ? ref1.length : void 0)) {
-      this._error(cb, "invalid-sign-key");
-      return;
-    }
-    this._sign(_opt.domain, _opt.accesskey, _opt.url, _opt.key, _opt.json, function(err, signature) {
-      var _surl;
-      if (err) {
-        cb(err);
-        return;
-      }
-      _surl = _opt.url;
-      if (_surl.indexOf("?") >= 0) {
-        _surl += "&";
-      } else {
-        _surl += "?";
-      }
-      _surl += "signature=" + encodeURIComponent(signature);
-      cb(null, _surl, signature);
-    });
-  };
-
-  Client.prototype._defaultRequestSignature = function(domain, accesskey, madiaapiurl, key, json, cb) {
-    var _url, _xhr, data;
-    _url = this.options.host + domain + "/sign/" + accesskey;
-    _xhr = new window.XMLHttpRequest();
-    data = new FormData();
-    data.append("url", madiaapiurl);
-    data.append("key", key);
-    if (json != null) {
-      data.append("json", JSON.stringify(json));
-    }
-    xhr({
-      xhr: _xhr,
-      method: "POST",
-      url: _url,
-      body: data
-    }, function(err, resp, signature) {
-      if (err) {
-        console.error("get sign error", err);
-        cb(err);
-        return;
-      }
-      cb(null, signature);
-    });
-  };
-
-  Client.prototype.abortAll = function() {
-    this.emit("abortAll");
-  };
-
-  Client.prototype.disable = function() {
-    this.sel.setAttribute("disabled", "disabled");
-    this.el.d.addClass(this.options.cssdisabled);
-    this.enabled = false;
-  };
-
-  Client.prototype.enable = function() {
-    this.sel.removeAttribute("disabled");
-    this.el.d.removeClass(this.options.cssdisabled);
-    this.enabled = true;
-  };
-
-  Client.prototype.fileDone = function(file) {
-    this.idx_finished++;
-    this._checkFinish();
-  };
-
-  Client.prototype.fileError = function(file, err) {
-    console.error("FILE-ERROR", file, err);
-    this.idx_finished++;
-    this._checkFinish();
-  };
-
-  Client.prototype.fileNew = function(file) {
-    var _fileview;
-    if (this.res != null) {
-      _fileview = new FileView(file, this, this.options);
-      this.res.d.append(_fileview.render());
-    }
-  };
-
-  Client.prototype.onFinish = function() {
-    this.el.d.removeClass(this.options.cssprocess);
-  };
-
-  Client.prototype._checkFinish = function() {
-    if (this.idx_finished >= this.idx_started) {
-      this.emit("finish");
-      if (this.options.maxcount > 0 && this.idx_started >= this.options.maxcount) {
-        this.disable();
-      }
-    }
-  };
-
-  Client.prototype._validateEl = function(el, type) {
-    var _el;
-    if (el == null) {
-      this._error(null, "missing-" + type + "-el");
-      return;
-    }
-    switch (typeof el) {
-      case "string":
-        _el = dom(el, null, true);
-        break;
-      case "object":
-        if (el instanceof HTMLElement) {
-          _el = dom.domel(el);
-        }
-    }
-    if (_el == null) {
-      this._error(null, "invalid-" + type + "-el");
-      return;
-    }
-    return _el;
-  };
-
-  Client.prototype.ERRORS = {
-    "missing-select-el": "Missing select element. Please define a valid element as a Selector, DOM-node",
-    "invalid-select-el": "Invalid select element. Please define a valid element as a Selector, DOM-node",
-    "missing-drag-el": "Missing drag element. Please define a valid element as a Selector, DOM-node",
-    "invalid-drag-el": "Invalid drag element. Please define a valid element as a Selector, DOM-node",
-    "missing-host": "Missing host. You have to defien a host as url starting with `http://` or `https://`.",
-    "invalid-host": "Invalid host. You have to defien a host as url starting with `http://` or `https://`.",
-    "missing-domain": "Missing domain. You have to define a domain.",
-    "missing-accesskey": "Missing accesskey. You have to define a accesskey.",
-    "missing-keyprefix": "Missing keyprefix. You have to define a keyprefix.",
-    "invalid-sign-url": "please define a `url` to sign the request",
-    "invalid-sign-key": "please define a `key` to sign the request",
-    "invalid-ttl": "for the option `ttl` only a positiv number is allowed",
-    "invalid-tags": "for the option `tags` only an array of strings is allowed",
-    "invalid-properties": "for the option `properties` only an object is allowed",
-    "invalid-content-disposition": "for the option `content-disposition` only an string like: `attachment; filename=friendly_filename.pdf` is allowed",
-    "invalid-acl": "the option acl only accepts the string `public-read` or `authenticated-read`"
-  };
-
-  return Client;
-
-})(Base);
-
-Client.defaults = function(options) {
-  for (_k in options) {
-    _v = options[_k];
-    if (indexOf.call(_defauktKeys, _k) >= 0) {
-      _defaults[_k] = _v;
-    }
-  }
-  return _defaults;
-};
-
-module.exports = Client;
-
-
-},{"./base":2,"./file":4,"./fileview":5,"./utils":7,"domel":1,"xhr":9}],4:[function(_dereq_,module,exports){
-var File, xhr,
-  bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  hasProp = {}.hasOwnProperty;
-
-xhr = _dereq_("xhr");
-
-File = (function(superClass) {
-  extend(File, superClass);
-
-  File.prototype.states = ["new", "start", "signed", "upload", "progress", "done", "invalid", "error", "aborted"];
-
-  function File(file, idx, client, options) {
-    var ref;
-    this.file = file;
-    this.idx = idx;
-    this.client = client;
-    this.options = options;
-    this._handleProgress = bind(this._handleProgress, this);
-    this._upload = bind(this._upload, this);
-    this._sign = bind(this._sign, this);
-    this._testMime = bind(this._testMime, this);
-    this._validate = bind(this._validate, this);
-    this._setState = bind(this._setState, this);
-    this.getData = bind(this.getData, this);
-    this.getType = bind(this.getType, this);
-    this.getName = bind(this.getName, this);
-    this.getProgress = bind(this.getProgress, this);
-    this.getResult = bind(this.getResult, this);
-    this.getState = bind(this.getState, this);
-    this.abort = bind(this.abort, this);
-    this.start = bind(this.start, this);
-    File.__super__.constructor.apply(this, arguments);
-    this.state = 0;
-    this.validation = [];
-    this.key = this.options.keyprefix + "_" + this.getName().replace(this._rgxFile2Key, "") + "_" + this._now() + "_" + this.idx;
-    this.client.emit("file.new", this);
-    this.client.on("abortAll", this.abort);
-    this.on("start", this.start);
-    this.on("signed", this._upload);
-    if (!((ref = this.options.keyprefix) != null ? ref.length : void 0)) {
-      this.options.keyprefix = "clientupload";
-    }
-    if (this.options.autostart == null) {
-      this.options.autostart = true;
-    }
-    this._validate();
-    if (this.options.autostart) {
-      this.emit("start");
-    }
-    return;
-  }
-
-  File.prototype.start = function() {
-    if (this.state <= 0) {
-      this._setState(1);
-      this.client.emit("file.upload", this);
-      this._sign();
-    }
-    return this;
-  };
-
-  File.prototype.abort = function() {
-    var ref;
-    if (this.state <= 4) {
-      this._setState(8);
-      if ((ref = this.requestUpload) != null) {
-        ref.abort();
-      }
-      this.emit("aborted");
-      this.client.emit("file.aborted", this);
-    }
-    return this;
-  };
-
-  File.prototype.getState = function() {
-    return this.states[this.state];
-  };
-
-  File.prototype.getResult = function() {
-    if (this.state === 5 && (this.data != null)) {
-      return {
-        url: this.data.url,
-        hash: this.data.filehash,
-        key: this.data.key,
-        type: this.data.content_type
-      };
-    }
-    return null;
-  };
-
-  File.prototype.getProgress = function(asFactor) {
-    var _fac;
-    if (asFactor == null) {
-      asFactor = false;
-    }
-    if (this.state < 4) {
-      _fac = 0;
-    } else if (this.state > 4) {
-      _fac = 1;
-    } else {
-      _fac = this.progressState;
-    }
-    if (asFactor) {
-      return _fac;
-    } else {
-      return Math.round(_fac * 100);
-    }
-  };
-
-  File.prototype.getName = function() {
-    return this.file.name;
-  };
-
-  File.prototype.getType = function() {
-    return this.file.type;
-  };
-
-  File.prototype.getData = function() {
-    var _ret;
-    _ret = {
-      name: this.client.formname,
-      filename: this.getName(),
-      idx: this.idx,
-      state: this.getState(),
-      progress: this.getProgress(),
-      result: this.getResult(),
-      options: this.options,
-      invalid_reason: this.validation,
-      error: this.error
-    };
-    return _ret;
-  };
-
-  File.prototype._setState = function(state) {
-    if (state > this.state) {
-      this.state = state;
-      this.emit("state", this.getState());
-    }
-    return state;
-  };
-
-  File.prototype._validate = function() {
-    var _size, ref;
-    _size = this.file.size / 1024;
-    if (this.options.maxsize > 0 && this.options.maxsize < _size) {
-      this.validation.push("maxsize");
-    }
-    if (((ref = this.options.acceptRules) != null ? ref.length : void 0) && !this._testMime(this.options.acceptRules)) {
-      this.validation.push("accept");
-    }
-    if (this.validation.length) {
-      this._setState(6);
-      this.emit("invalid", this.validation);
-      this.client.emit("file.invalid", this, this.validation);
-      return false;
-    }
-    return true;
-  };
-
-  File.prototype._testMime = function(acceptRules) {
-    var _rule, i, len;
-    for (i = 0, len = acceptRules.length; i < len; i++) {
-      _rule = acceptRules[i];
-      if (_rule(this.file)) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  File.prototype._now = function() {
-    return Math.round(Date.now() / 1000);
-  };
-
-  File.prototype._rgxFile2Key = /([^A-Za-z0-9])/ig;
-
-  File.prototype._sign = function() {
-    var _content_type, _name;
-    _name = this.getName();
-    _content_type = this.getType();
-    if (this.state > 1) {
-      return;
-    }
-    this.url = this.options.host + this.options.domain + "/" + this.key;
-    this.json = {
-      blob: true,
-      acl: this.options.acl,
-      ttl: this.options.ttl,
-      properties: {
-        filename: _name
-      }
-    };
-    if (this.options.width != null) {
-      this.json.width = this.options.width;
-    }
-    if (this.options.height != null) {
-      this.json.height = this.options.height;
-    }
-    if (this.options.tags != null) {
-      this.json.tags = this.options.tags;
-    }
-    if (this.options.properties != null) {
-      this.json.properties = this.options.properties;
-    }
-    if (this.options["content-disposition"] != null) {
-      this.json["content-disposition"] = this.options["content-disposition"];
-    }
-    if (_content_type != null ? _content_type.length : void 0) {
-      this.json.content_type = _content_type;
-    }
-    this.emit("content", this.key, this.json);
-    this.client.emit("file.content", this, this.key, this.json);
-    this.client.sign.call(this, {
-      url: this.url,
-      key: this.key,
-      json: this.json
-    }, (function(_this) {
-      return function(err, url) {
-        _this.url = url;
-        if (err) {
-          _this.error = err;
-          _this._setState(7);
-          _this.emit("error", err);
-          _this.client.emit("file.error", _this, err);
-          return;
-        }
-        _this._setState(2);
-        _this.emit("signed");
-      };
-    })(this));
-  };
-
-  File.prototype._upload = function() {
-    var _xhr, data, ref;
-    if (this.state > 2) {
-      return;
-    }
-    this._setState(3);
-    data = new FormData();
-    data.append("JSON", JSON.stringify(this.json));
-    data.append("blob", this.file);
-    _xhr = new window.XMLHttpRequest();
-    if ((ref = _xhr.upload) != null) {
-      ref.addEventListener("progress", this._handleProgress(), false);
-    }
-    _xhr.addEventListener("progress", this._handleProgress(), false);
-    _xhr._isfile = true;
-    this.requestUpload = xhr({
-      xhr: _xhr,
-      url: this.url,
-      method: "POST",
-      data: data
-    }, (function(_this) {
-      return function(err, resp, body) {
-        var _data;
-        if (err) {
-          _this._setState(7);
-          _this.progressState = 0;
-          _this.error = err;
-          _this.emit("error", err);
-          _this.client.emit("file.error", _this, err);
-          return;
-        }
-        _data = JSON.parse(body);
-        if (resp.statusCode >= 300) {
-          _this._setState(7);
-          _this.progressState = 0;
-          _this.error = _data;
-          _this.emit("error", _data);
-          _this.client.emit("file.error", _this, _data);
-          return;
-        }
-        _this.data = _data != null ? _data.rows[0] : void 0;
-        _this.progressState = 1;
-        _this._setState(5);
-        _this.emit("done", _this.data);
-        _this.client.emit("file.done", _this);
-      };
-    })(this));
-  };
-
-  File.prototype._handleProgress = function() {
-    return (function(_this) {
-      return function(evnt) {
-        if (evnt.target.method == null) {
-          _this.progressState = evnt.loaded / evnt.total;
-          _this._setState(4);
-          _this.emit("progress", _this.getProgress(), evnt);
-          return;
-        }
-      };
-    })(this);
-  };
-
-  return File;
-
-})(_dereq_("./base"));
-
-module.exports = File;
-
-
-},{"./base":2,"xhr":9}],5:[function(_dereq_,module,exports){
-var FileView, dom,
-  bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  hasProp = {}.hasOwnProperty;
-
-dom = _dereq_("domel");
-
-FileView = (function(superClass) {
-  extend(FileView, superClass);
-
-  function FileView(fileObj, client, options) {
-    this.fileObj = fileObj;
-    this.client = client;
-    this.options = options;
-    this.update = bind(this.update, this);
-    this.render = bind(this.render, this);
-    FileView.__super__.constructor.apply(this, arguments);
-    if ((this.options.resultTemplateFn != null) && typeof this.options.resultTemplateFn === "function") {
-      this.template = this.options.resultTemplateFn;
-    } else {
-      this.template = this._defaultTemplate;
-    }
-    if (this.options.cssfileelement != null) {
-      this.resultClass = this.options.cssfileelement;
-    } else {
-      this.resultClass = "file col-sm-6 col-md-4";
-    }
-    this.fileObj.on("progress", this.update());
-    this.fileObj.on("done", this.update());
-    this.fileObj.on("error", this.update());
-    this.fileObj.on("invalid", this.update());
-    return;
-  }
-
-  FileView.prototype.render = function() {
-    this.el = dom.create("div", {
-      "class": this.resultClass
-    });
-    this.el.innerHTML = this.template(this.fileObj.getData());
-    return this.el;
-  };
-
-  FileView.prototype.update = function() {
-    return (function(_this) {
-      return function(evnt) {
-        _this.el.innerHTML = _this.template(_this.fileObj.getData());
-      };
-    })(this);
-  };
-
-  FileView.prototype._defaultTemplate = function(data) {
-    var _html, _k, _reason, _v, i, len, ref, ref1;
-    _html = "<div class=\"thumbnail state-" + data.state + "\">\n	<b>" + data.filename + "</b>";
-    switch (data.state) {
-      case "progress":
-        _html += "<div class=\"progress\">\n	<div class=\"progress-bar\" role=\"progressbar\" aria-valuenow=\"" + data.progress + "\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: " + data.progress + "%;\">\n		<span>" + data.progress + "%</span>\n	</div>\n</div>";
-        break;
-      case "done":
-        _html += "<div class=\"result\">\n	<a href=\"" + data.result.url + "\" target=\"_new\">Fertig! ( " + data.result.key + " )</a>";
-        ref = data.result;
-        for (_k in ref) {
-          _v = ref[_k];
-          _html += "<input type=\"hidden\" name=\"" + data.name + "_" + data.idx + "_" + _k + "\" value=\"" + _v + "\">";
-        }
-        _html += "</div>";
-        break;
-      case "invalid":
-        _html += "<div class=\"result\">\n	<b>Invalid</b>";
-        ref1 = data.invalid_reason;
-        for (i = 0, len = ref1.length; i < len; i++) {
-          _reason = ref1[i];
-          switch (_reason) {
-            case "maxsize":
-              _html += "<div class=\"alert alert-error\">File too big. Only files until " + data.options.maxsize + "kb are allowed.</div>";
-              break;
-            case "accept":
-              _html += "<div class=\"alert alert-error\">Wrong type. Only files of type " + (data.options.accept.join(", ")) + " are allowed.</div>";
-          }
-          _html += "</div>";
-        }
-        break;
-      case "error":
-        _html += "<div class=\"alert alert-error\">An Error occured.</div>";
-        break;
-      case "aborted":
-        _html += "<div class=\"alert alert-error\">Upload aborted.</div>";
-    }
-    _html += "</div>";
-    return _html;
-  };
-
-  return FileView;
-
-})(_dereq_("./base"));
-
-module.exports = FileView;
-
-
-},{"./base":2,"domel":1}],6:[function(_dereq_,module,exports){
-var Base, Client, File, FileView;
-
-Base = _dereq_("./base");
-
-File = _dereq_("./file");
-
-FileView = _dereq_("./fileview");
-
-Client = _dereq_("./client");
-
-Client.Base = Base;
-
-Client.File = File;
-
-Client.FileView = FileView;
-
-module.exports = Client;
-
-
-},{"./base":2,"./client":3,"./file":4,"./fileview":5}],7:[function(_dereq_,module,exports){
-var _intRegex, assign, isArray, isFunction, isInt, isObject, isString,
-  slice = [].slice;
-
-isObject = function(vr) {
-  return vr !== null && typeof vr === 'object';
-};
-
-isArray = function(vr) {
-  return Object.prototype.toString.call(vr) === '[object Array]';
-};
-
-isString = function(vr) {
-  return typeof vr === 'string' || vr instanceof String;
-};
-
-_intRegex = /^\d+$/;
-
-isInt = function(vr) {
-  return _intRegex.test(vr);
-};
-
-isFunction = function(object) {
-  return typeof object === 'function';
-};
-
-assign = function() {
-  var _k, _v, i, len, src, srcs, tgrt;
-  tgrt = arguments[0], srcs = 2 <= arguments.length ? slice.call(arguments, 1) : [];
-  for (i = 0, len = srcs.length; i < len; i++) {
-    src = srcs[i];
-    if (isObject(src)) {
-      for (_k in src) {
-        _v = src[_k];
-        tgrt[_k] = _v;
-      }
-    }
-  }
-  return tgrt;
-};
-
-module.exports = {
-  isArray: isArray,
-  isObject: isObject,
-  isString: isString,
-  isFunction: isFunction,
-  isInt: isInt,
-  assign: assign
-};
-
-
 },{}],8:[function(_dereq_,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -1766,14 +1844,27 @@ function isUndefined(arg) {
 "use strict";
 var window = _dereq_("global/window")
 var once = _dereq_("once")
+var isFunction = _dereq_("is-function")
 var parseHeaders = _dereq_("parse-headers")
-
-
+var xtend = _dereq_("xtend")
 
 module.exports = createXHR
 createXHR.XMLHttpRequest = window.XMLHttpRequest || noop
 createXHR.XDomainRequest = "withCredentials" in (new createXHR.XMLHttpRequest()) ? createXHR.XMLHttpRequest : window.XDomainRequest
 
+forEachArray(["get", "put", "post", "patch", "head", "delete"], function(method) {
+    createXHR[method === "delete" ? "del" : method] = function(uri, options, callback) {
+        options = initParams(uri, options, callback)
+        options.method = method.toUpperCase()
+        return _createXHR(options)
+    }
+})
+
+function forEachArray(array, iterator) {
+    for (var i = 0; i < array.length; i++) {
+        iterator(array[i])
+    }
+}
 
 function isEmpty(obj){
     for(var i in obj){
@@ -1782,7 +1873,34 @@ function isEmpty(obj){
     return true
 }
 
-function createXHR(options, callback) {
+function initParams(uri, options, callback) {
+    var params = uri
+
+    if (isFunction(options)) {
+        callback = options
+        if (typeof uri === "string") {
+            params = {uri:uri}
+        }
+    } else {
+        params = xtend(options, {uri: uri})
+    }
+
+    params.callback = callback
+    return params
+}
+
+function createXHR(uri, options, callback) {
+    options = initParams(uri, options, callback)
+    return _createXHR(options)
+}
+
+function _createXHR(options) {
+    var callback = options.callback
+    if(typeof callback === "undefined"){
+        throw new Error("callback argument missing")
+    }
+    callback = once(callback)
+
     function readystatechange() {
         if (xhr.readyState === 4) {
             loadFunc()
@@ -1859,16 +1977,6 @@ function createXHR(options, callback) {
 
     }
 
-    if (typeof options === "string") {
-        options = { uri: options }
-    }
-
-    options = options || {}
-    if(typeof callback === "undefined"){
-        throw new Error("callback argument missing")
-    }
-    callback = once(callback)
-
     var xhr = options.xhr || null
 
     if (!xhr) {
@@ -1883,7 +1991,7 @@ function createXHR(options, callback) {
     var aborted
     var uri = xhr.url = options.uri || options.url
     var method = xhr.method = options.method || "GET"
-    var body = options.body || options.data
+    var body = options.body || options.data || null
     var headers = xhr.headers = options.headers || {}
     var sync = !!options.sync
     var isJson = false
@@ -1953,7 +2061,7 @@ function createXHR(options, callback) {
 
 function noop() {}
 
-},{"global/window":10,"once":11,"parse-headers":15}],10:[function(_dereq_,module,exports){
+},{"global/window":10,"is-function":11,"once":12,"parse-headers":15,"xtend":16}],10:[function(_dereq_,module,exports){
 (function (global){
 if (typeof window !== "undefined") {
     module.exports = window;
@@ -1967,6 +2075,23 @@ if (typeof window !== "undefined") {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],11:[function(_dereq_,module,exports){
+module.exports = isFunction
+
+var toString = Object.prototype.toString
+
+function isFunction (fn) {
+  var string = toString.call(fn)
+  return string === '[object Function]' ||
+    (typeof fn === 'function' && string !== '[object RegExp]') ||
+    (typeof window !== 'undefined' &&
+     // IE8 and below
+     (fn === window.setTimeout ||
+      fn === window.alert ||
+      fn === window.confirm ||
+      fn === window.prompt))
+};
+
+},{}],12:[function(_dereq_,module,exports){
 module.exports = once
 
 once.proto = once(function () {
@@ -1987,7 +2112,7 @@ function once (fn) {
   }
 }
 
-},{}],12:[function(_dereq_,module,exports){
+},{}],13:[function(_dereq_,module,exports){
 var isFunction = _dereq_('is-function')
 
 module.exports = forEach
@@ -2035,24 +2160,7 @@ function forEachObject(object, iterator, context) {
     }
 }
 
-},{"is-function":13}],13:[function(_dereq_,module,exports){
-module.exports = isFunction
-
-var toString = Object.prototype.toString
-
-function isFunction (fn) {
-  var string = toString.call(fn)
-  return string === '[object Function]' ||
-    (typeof fn === 'function' && string !== '[object RegExp]') ||
-    (typeof window !== 'undefined' &&
-     // IE8 and below
-     (fn === window.setTimeout ||
-      fn === window.alert ||
-      fn === window.confirm ||
-      fn === window.prompt))
-};
-
-},{}],14:[function(_dereq_,module,exports){
+},{"is-function":11}],14:[function(_dereq_,module,exports){
 
 exports = module.exports = trim;
 
@@ -2100,5 +2208,26 @@ module.exports = function (headers) {
 
   return result
 }
-},{"for-each":12,"trim":14}]},{},[6])(6)
+},{"for-each":13,"trim":14}],16:[function(_dereq_,module,exports){
+module.exports = extend
+
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+
+function extend() {
+    var target = {}
+
+    for (var i = 0; i < arguments.length; i++) {
+        var source = arguments[i]
+
+        for (var key in source) {
+            if (hasOwnProperty.call(source, key)) {
+                target[key] = source[key]
+            }
+        }
+    }
+
+    return target
+}
+
+},{}]},{},[5])(5)
 });

@@ -280,18 +280,28 @@ The drag element will offer it's current state by some css classes added or remo
 
 ### Events
 
-**`start`** *()*: 
+**`start`** *()*:  
 One or more uploades started.
 
-**`finish`** *( count )*: 
+**`finish`** *( count )*:  
 All currently running uploads are done.
 * `count` *( Number )*: The count of finished uploads since the last .finish` event 
 
-**`file.new`** *( file )*: 
+**`progress`** *( precent, states, fileCount )*:  
+The progress over all files
+* `precent` *( Number )*: The precentage of the currently uploads over all active uploads  *( `0`-`100` )*
+* `states` *( Number[] )*: A Array of file states
+	* `states[0]`: Count of started but waiting file uploads
+	* `states[1]`: Count of files currently uploading
+	* `states[2]`: Count of files done
+	* `states[3]`: Count of file failed to upload. Details see `error` or `file.error` event
+* `fileCount` *( Number )*: The count of files in the queue. It's the same as a sum of all states
+
+**`file.new`** *( file )*:  
 New file dropped/selected.
 * `file` *( File )*: The file object 
 
-**`file.content`** *( file, key, json )*: 
+**`file.content`** *( file, key, json )*:  
 Event to hook a data manipulation. So you are able to change the object's key and JSON data before signing and uploading
 * `file` *( File )*: The file object 
 * `key` *( String )*: The generated key
@@ -306,29 +316,34 @@ Event to hook a data manipulation. So you are able to change the object's key an
 	* `json.content_type` *( String )*: The files content type read by the browser file API
 	* `json.content-disposition` *( String )*: the content disposition e.g. `attachment; filename=friendly_filename.pdf`
 
-**`file.upload`** *( file )*: 
+**`file.upload`** *( file )*:  
 File upload started
 * `file` *( File )*: The file object 
 
-**`file.done`** *( file )*: 
+**`file.progress`** *( file, progress )*:  
+File progress status
+* `file` *( File )*: The file object 
+* `percent` *( Number )*:The uploaded progress in precent of the `file`
+
+**`file.done`** *( file )*:  
 File upload done
 * `file` *( File )*: The file object
 
-**`file.aborted`** *( file )*: 
+**`file.aborted`** *( file )*:  
 File upload aborted
 * `file` *( File )*: The file object
 
-**`file.invalid`** *( file, validation )*: 
+**`file.invalid`** *( file, validation )*:  
 File upload invalid
 * `file` *( File )*: The file object 
 * `validation` *( Array )*: Array of invalid keys ( `maxsize`: File too big; `accept`: invalid type ) 
 
-**`file.error`** *( file, error )*: 
+**`file.error`** *( file, error )*:  
 File error
 * `file` *( File )*: The file object 
 * `error` *( Error )*: the error object
 
-**`file.hover`** *()*: 
+**`file.hover`** *()*:  
 User hovered with a file
 
 ## File Object `FileInstance = new File()`
@@ -416,14 +431,14 @@ Returns a object of all current data ( e.g. for rendering ).
 
 ### Events
 
-**`start`** *()*: 
+**`start`** *()*:  
 File upload started
 
-**`state`** *( state )*: 
+**`state`** *( state )*:  
 New file dropped/selected.
 * `state` *( String )*: The current file state ( `new`, `start`, `signed`, `upload`, `progress`, `done`, `invalid`, `error` )
 
-**`content`** *( key, json )*: 
+**`content`** *( key, json )*:  
 Event to hook a data manipulation. So you are able to change the object's key and JSON data before signing and uploading
 * `key` *( String )*: The generated key
 * `json` *( Object )*: The media-api json data
@@ -437,27 +452,27 @@ Event to hook a data manipulation. So you are able to change the object's key an
 	* `json.content_type` *( String )*: The files content type read by the browser file API
 	* `json.content-disposition` *( String )*: the content disposition e.g. `attachment; filename=friendly_filename.pdf`
 
-**`signed`** *()*: 
+**`signed`** *()*:  
 File has been signed
 
-**`progress`** *( percent, event )*: 
+**`progress`** *( percent, event )*:  
 File error
-* `percent` *( Number )*: The uploaded progress in precent
-* `event` *( Event )*: Xhr Event
+* `percent` *( Number )*:The uploaded progress in precent *( `0`-`100` )* 
+* `event` *( Event )*:Xhr Event
 
-**`done`** *()*: 
+**`done`** *()*:  
 File upload done
 
-**`aborted`** *()*: 
+**`aborted`** *()*:  
 File upload aborted
 
-**`invalid`** *( validation )*: 
+**`invalid`** *( validation )*:  
 File upload invalid
-* `validation` *( Array )*: Array of invalid keys ( `maxsize`: File too big; `accept`: invalid type ) 
+* `validation` *( Array )*:Array of invalid keys ( `maxsize`: File too big; `accept`: invalid type ) 
 
-**`error`** *( error )*: 
+**`error`** *( error )*:  
 File error
-* `error` *( Error )*: the error object
+* `error` *( Error )*:the error object
 
 ## OPEN Features
 
@@ -466,7 +481,7 @@ File error
 ## Release History
 |Version|Date|Description|
 |:--:|:--:|:--|
-|v1.2.0|2016-02-23|Added `start` event and `count` argument for `finish` event ( see #5 ); |
+|v1.2.0|2016-02-23|Added `start` event and `count` argument for `finish` event ( see #5 ); Added client `progress` event to be able to show a cumulated progressbar ( see #6 ); Optimized error handling |
 |v1.1.2|2015-10-02|fixed is function call|
 |v1.1.1|2015-10-02|added automatic release|
 |v1.1.0|2015-10-02|optimized singing; added `deleteFile( key, rev, cb )` method to delete a file directly from the client.|
