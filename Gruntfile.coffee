@@ -4,6 +4,16 @@ module.exports = (grunt) ->
 	grunt.initConfig
 		pkg: grunt.file.readJSON('package.json')
 		cnf: grunt.file.readJSON('config.json')
+		banner: """
+/*
+ * Media-API-Client <%= pkg.version %> ( <%= grunt.template.today( 'yyyy-mm-dd' )%> )
+ * https://github.com/mpneuried/media-api-client/tree/<%= pkg.version %>
+ *
+ * Released under the MIT license
+ * https://github.com/mpneuried/media-api-client/blob/master/LICENSE
+*/
+
+"""
 		watch:
 			css:
 				files: ["_src/**/*.css"]
@@ -34,7 +44,7 @@ module.exports = (grunt) ->
 				ext: '.js'
 			basecommonjs:
 				options: 
-					banner: "/*\nMedia-API Client (<%= pkg.version %>)\n*/\n"
+					banner: "<%= banner %>"
 				expand: true
 				cwd: '_src/lib',
 				src: ["**/*.coffee"]
@@ -50,7 +60,7 @@ module.exports = (grunt) ->
 		browserify:
 			base:
 				options:
-					banner: "/*\nMedia-API Client (<%= pkg.version %>)\n*/\n"
+					banner: "<%= banner %>"
 					transform: ["coffeeify"]
 					plugin: [
 						[ "browserify-derequire" ]
@@ -63,7 +73,7 @@ module.exports = (grunt) ->
 								
 			commonjs_test:
 				options:
-					banner: "/*\nMedia-API Client (<%= pkg.version %>)\n*/\n"
+					banner: "<%= banner %>"
 					transform: ["coffeeify"]
 					plugin: [
 						[ "browserify-derequire" ]
@@ -75,7 +85,7 @@ module.exports = (grunt) ->
 
 			basedebug:
 				options:
-					banner: "/*\nMedia-API Client (<%= pkg.version %>)\n*/\n"
+					banner: "<%= banner %>"
 					transform: ["coffeeify"]
 					plugin: [
 						[ "browserify-derequire" ]
@@ -105,7 +115,7 @@ module.exports = (grunt) ->
 		stylus:
 			options:
 				compress: false
-				banner: "/*\nMedia-API Client (<%= pkg.version %>)\n*/\n"
+				banner: "<%= banner %>"
 			css:
 				files:
 					"dist/mediaapiclient.css": ["_src/main.styl"]
@@ -121,14 +131,14 @@ module.exports = (grunt) ->
 
 		uglify:
 			options:
-				banner: "/*\nMedia-API Client (<%= pkg.version %>)\n*/\n"
+				banner: "<%= banner %>"
 			js:
 				files:
 					"dist/mediaapiclient.min.js": ["dist/mediaapiclient.js"]
 
 		cssmin:
 			options:
-				banner: "/*\nMedia-API Client (<%= pkg.version %>)\n*/\n"
+				banner: "<%= banner %>"
 			css:
 				files:
 					"dist/mediaapiclient.min.css": ["dist/mediaapiclient.css"]

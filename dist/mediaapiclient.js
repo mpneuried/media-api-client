@@ -1,5 +1,9 @@
 /*
-Media-API Client (1.2.0)
+ * Media-API-Client 1.3.0 ( 2016-02-24 )
+ * https://github.com/mpneuried/media-api-client/tree/1.3.0
+ *
+ * Released under the MIT license
+ * https://github.com/mpneuried/media-api-client/blob/master/LICENSE
 */
 
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.MediaApiClient = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
@@ -102,7 +106,7 @@ _defauktKeys = (function() {
 Client = (function(superClass) {
   extend(Client, superClass);
 
-  Client.prototype.version = "1.2.0";
+  Client.prototype.version = "1.3.0";
 
   Client.prototype._rgxHost = /https?:\/\/[^\/$\s]+/i;
 
@@ -220,6 +224,10 @@ Client = (function(superClass) {
     }
     if ((this.options.properties != null) && !utils.isObject(this.options.properties)) {
       this._error(null, "invalid-properties");
+      return;
+    }
+    if ((this.options.quality != null) && (!utils.isInt(this.options.quality) || this.options.quality < 0 || this.options.quality > 100)) {
+      this._error(null, "invalid-quality");
       return;
     }
     if ((this.options["content-disposition"] != null) && !utils.isString(this.options["content-disposition"])) {
@@ -611,7 +619,8 @@ Client = (function(superClass) {
     "invalid-tags": "for the option `tags` only an array of strings is allowed",
     "invalid-properties": "for the option `properties` only an object is allowed",
     "invalid-content-disposition": "for the option `content-disposition` only an string like: `attachment; filename=friendly_filename.pdf` is allowed",
-    "invalid-acl": "the option acl only accepts the string `public-read` or `authenticated-read`"
+    "invalid-acl": "the option acl only accepts the string `public-read` or `authenticated-read`",
+    "invalid-quality": "the option quality has to be a integer between 0 and 100"
   };
 
   return Client;
@@ -833,6 +842,9 @@ File = (function(superClass) {
     }
     if (this.options.height != null) {
       this.json.height = this.options.height;
+    }
+    if (this.options.quality != null) {
+      this.json.quality = this.options.quality;
     }
     if (this.options.tags != null) {
       this.json.tags = this.options.tags;
