@@ -6,13 +6,28 @@ document.addEventListener 'DOMContentLoaded', ->
 	clientSize = new MediaApiClient( "#smallfile", "#smallfile .results", { tags: [ "testtagA", "testtagB" ], properties: { a: 1, b: 2 }, acl: "authenticated-read", "content-disposition": "attachment; filename=friendly_filename.jpg" } )
 	clientType = new MediaApiClient( "#acceptonly", "#acceptonly .results" )
 
+	stdProg = document.getElementById( "standardProgress" )
+	stdProgBar = document.getElementById( "standardProgressBar" )
+	stdProgBarInfo = document.getElementById( "standardProgressInfo" )
+
 	clientStd.on "finish", ( count )->
 		console.info "all finished", count
-		
+		stdProg.style.display = "none"
 		return
 
 	clientStd.on "start", ->
 		console.info "started"
+		stdProg.style.display = "block"
+		return
+
+	clientStd.on "progress", ( prec, counts, filecount )->
+		stdProgBar.style.width = prec + "%"
+		stdProgBarInfo.innerHTML = Math.round( prec ) + "% (" + ( counts[2] + counts[3] ) + "/" + filecount + ")"
+		return
+
+
+	clientStd.on "error", ( err, file )->
+		console.info "error", err, file
 		
 		return
 		

@@ -154,7 +154,10 @@ class Client extends Base
 		@idx_finished = 0
 		@count_last_finished = 0
 
-		@on "file.upload", @onStarted
+		@on "file.upload", @fileStarted
+
+		@_currentProgress = {}
+		@on "file.progress", @fileProgress
 
 		@el.d.data( "mediaapiclient", @ )
 		return
@@ -238,14 +241,8 @@ class Client extends Base
 			@el.d.removeClass( @options.csshover )
 		return
 
-	onStarted: =>
-		if @_running
-			return
-		@_running = true
-		@emit( "start" )
-		return
-
 	upload: ( files )=>
+		@setMaxListeners( files.length ) if files.length > 10
 		if @useFileAPI
 			for file, idx in files when @enabled
 				if @options.maxcount <= 0 or @idx_started < @options.maxcount
@@ -342,32 +339,79 @@ class Client extends Base
 		@enabled = true
 		return
 
-	fileDone: ( file )=>
-		@idx_finished++
-		@_checkFinish()
-		return
-
-	fileError: ( file, err )=>
-		console.error "FILE-ERROR", file, err
-		if not file._errored
-			@idx_finished++
-			@_checkFinish()
-		file._errored = true
-		return
-
 	fileNew: ( file )=>
 		if @res?
 			_fileview = new FileView( file, @, @options )
 			@res.d.append( _fileview.render() )
 		return
 
+	fileStarted: ( file )=>
+		@_currentProgress[ file.idx ] = 0
+		if @_running
+			return
+		@_running = true
+		@emit( "start" )
+		return
+
+	fileProgress: ( file, precent )=>
+		if not @_currentProgress[ file.idx ]? or @_currentProgress[ file.idx ] >= 0
+			@_currentProgress[ file.idx ] = precent
+
+		@_calcProgress()
+		return
+
+	fileError: ( file, err )=>
+		console.error "FILE-ERROR", file, err
+		if not file._errored
+			@_currentProgress[ file.idx ] = -1
+			@idx_finished++
+			@_checkFinish()
+		file._errored = true
+
+		return
+
+	fileDone: ( file )=>
+		@_currentProgress[ file.idx ] = 100
+		@idx_finished++
+		@_checkFinish()
+		return
+
 	onFinish: =>
 		@el.d.removeClass( @options.cssprocess )
+		return
+
+	_calcProgress: =>
+		_running = 0
+		_waiting = 0
+		_done = 0
+		_failed = 0
+		_precCumu = 0
+		_count = 0
+
+		for _idx, prec of @_currentProgress
+			_count++
+			if prec < 0
+				_failed++
+				_precCumu += 100
+				continue
+			if prec is 0
+				_waiting++
+				continue
+			if prec < 100
+				_running++
+				_precCumu += prec
+				continue
+			if prec is 100
+				_done++
+				_precCumu += 100
+
+		@emit( "progress", _precCumu/_count, [ _waiting, _running, _done, _failed ], _count )
 		return
 
 	_checkFinish: =>
 		if @idx_finished >= @idx_started
 			@_running = false
+			@_currentProgress = {}
 			@emit( "finish", @idx_finished - @count_last_finished )
 			@count_last_finished = @idx_finished
 			if @options.maxcount > 0 and @idx_started >= @options.maxcount
