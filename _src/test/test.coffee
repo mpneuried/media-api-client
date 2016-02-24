@@ -25,10 +25,8 @@ document.addEventListener 'DOMContentLoaded', ->
 		stdProgBarInfo.innerHTML = Math.round( prec ) + "% (" + ( counts[2] + counts[3] ) + "/" + filecount + ")"
 		return
 
-
 	clientStd.on "error", ( err, file )->
-		console.info "error", err, file
-		
+		console.error "error", err, file
 		return
 		
 	clientStd.on "file.new", ( file )->

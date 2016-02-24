@@ -16,6 +16,21 @@
       body {
         padding-top: 50px;
       }
+      .pgrs{
+        width: 100%;
+        background-color: #888;
+        border: 1px solid black;
+        display: none;
+      }
+      .pgrs-bar{
+        width: 0%;
+        background-color: blue;
+      }
+      .pgrs-bar-info{
+        color: white;
+        font-size: 12px;
+        margin-left: 10px;
+      }
     </style>
   </head>
 
@@ -29,6 +44,11 @@
             <b class="dropinfo dropactive"><span>click to select or drop files here</span></b>
             <b class="dropinfo dropfallback"><span>Your Browser is not supported. Please use a modern Browser.</span></b>
             <input type="file" id="standardselect" name="standard" multiple="multiple" />
+            <div class="pgrs" id="standardProgress">
+              <div class="pgrs-bar" id="standardProgressBar">
+                <span class="pgrs-bar-info" id="standardProgressInfo">0%</span>
+              </div>
+            </div>
             <div class="results"></div>
           </label>
 
