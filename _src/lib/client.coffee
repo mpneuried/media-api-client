@@ -361,7 +361,10 @@ class Client extends Base
 		return
 
 	fileError: ( file, err )=>
-		console.error "FILE-ERROR", file, err
+		if @listeners( "error" ).length
+			@emit( "error", err, file )
+		else
+			console.error "FILE-ERROR", file, err
 		if not file._errored
 			@_currentProgress[ file.idx ] = -1
 			@idx_finished++
