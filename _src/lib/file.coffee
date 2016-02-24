@@ -88,6 +88,10 @@ class File extends require("./base")
 		if state > @state
 			@state = state
 			@emit( "state", @getState() )
+
+		# detach the file from the client
+		if @state >= @states.indexOf( "done" )
+			@client.removeListener "abortAll", @abort
 		return state
 
 	_validate: =>
@@ -204,7 +208,9 @@ class File extends require("./base")
 			if not evnt.target.method?
 				@progressState = evnt.loaded/evnt.total
 				@_setState( 4 )
-				@emit( "progress", @getProgress(), evnt )
+				_progress = @getProgress()
+				@emit( "progress", _progress, evnt )
+				@client.emit( "file.progress", @, _progress )
 				return
 			return
 		
