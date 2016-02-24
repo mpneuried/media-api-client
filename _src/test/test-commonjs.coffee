@@ -1,8 +1,8 @@
 MediaApiClient = require( "media-api-client" )
 MediaApiClient.defaults( { host: "@@testhost", domain: "mediaapitest", accesskey: "@@testaccesskey" } )
 
-clientStd = new MediaApiClient( "#standard", "#standard .results" )
-clientCount = new MediaApiClient( "#count", "#count .results")
+clientStd = new MediaApiClient( "#standard", "#standard .results", { quality: 20, width: 250 } )
+clientCount = new MediaApiClient( "#count", "#count .results", { quality: 100, width: 250 })
 clientSize = new MediaApiClient( "#smallfile", "#smallfile .results" )
 clientType = new MediaApiClient( "#acceptonly", "#acceptonly .results" )
 

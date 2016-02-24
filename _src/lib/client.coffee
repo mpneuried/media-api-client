@@ -126,6 +126,10 @@ class Client extends Base
 			@_error( null, "invalid-properties" )
 			return
 
+		if @options.quality? and ( not utils.isInt( @options.quality ) or @options.quality < 0 or @options.quality > 100 )
+			@_error( null, "invalid-quality" )
+			return
+
 		if @options[ "content-disposition" ]? and not utils.isString( @options[ "content-disposition" ] )
 			@_error( null, "invalid-content-disposition" )
 			return
@@ -458,6 +462,7 @@ class Client extends Base
 		"invalid-properties": "for the option `properties` only an object is allowed"
 		"invalid-content-disposition": "for the option `content-disposition` only an string like: `attachment; filename=friendly_filename.pdf` is allowed"
 		"invalid-acl": "the option acl only accepts the string `public-read` or `authenticated-read`"
+		"invalid-quality": "the option quality has to be a integer between 0 and 100"
 
 Client.defaults = ( options )->
 	for _k, _v of options when _k in _defauktKeys

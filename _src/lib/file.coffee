@@ -134,7 +134,8 @@ class File extends require("./base")
 
 		@json.width = @options.width if @options.width?
 		@json.height = @options.height if @options.height?
-
+		@json.quality = @options.quality if @options.quality?
+		
 		@json.tags = @options.tags if @options.tags?
 		@json.properties = @options.properties if @options.properties?
 		@json[ "content-disposition" ] = @options[ "content-disposition" ] if @options[ "content-disposition" ]?
