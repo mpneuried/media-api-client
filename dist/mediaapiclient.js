@@ -1,6 +1,6 @@
 /*
- * Media-API-Client 1.3.0 ( 2016-02-24 )
- * https://github.com/mpneuried/media-api-client/tree/1.3.0
+ * Media-API-Client 1.3.1 ( 2016-03-29 )
+ * https://github.com/mpneuried/media-api-client/tree/1.3.1
  *
  * Released under the MIT license
  * https://github.com/mpneuried/media-api-client/blob/master/LICENSE
@@ -106,7 +106,7 @@ _defauktKeys = (function() {
 Client = (function(superClass) {
   extend(Client, superClass);
 
-  Client.prototype.version = "1.3.0";
+  Client.prototype.version = "1.3.1";
 
   Client.prototype._rgxHost = /https?:\/\/[^\/$\s]+/i;
 
@@ -115,6 +115,7 @@ Client = (function(superClass) {
     if (options == null) {
       options = {};
     }
+    this._getFilesFromEvent = bind(this._getFilesFromEvent, this);
     this._validateEl = bind(this._validateEl, this);
     this._checkFinish = bind(this._checkFinish, this);
     this._calcProgress = bind(this._calcProgress, this);
@@ -319,16 +320,19 @@ Client = (function(superClass) {
   };
 
   Client.prototype.onSelect = function(evnt) {
-    var files, ref, ref1, ref2, ref3, ref4, ref5;
+    var files;
+    files = this._getFilesFromEvent(evnt);
     evnt.preventDefault();
     if (!this.enabled) {
       return;
     }
     if (this.options.maxcount <= 0 || this.idx_started < this.options.maxcount) {
       this.el.d.removeClass(this.options.csshover);
-      this.el.d.addClass(this.options.cssprocess);
-      files = ((ref = evnt.target) != null ? ref.files : void 0) || ((ref1 = evnt.originalEvent) != null ? (ref2 = ref1.target) != null ? ref2.files : void 0 : void 0) || ((ref3 = evnt.dataTransfer) != null ? ref3.files : void 0) || ((ref4 = evnt.originalEvent) != null ? (ref5 = ref4.dataTransfer) != null ? ref5.files : void 0 : void 0);
-      this.upload(files);
+      if (files != null ? files.length : void 0) {
+        this.el.d.addClass(this.options.cssprocess);
+        this.upload(files);
+      }
+      return;
     } else {
       this.el.d.removeClass(this.options.csshover);
       this.disable();
@@ -601,6 +605,11 @@ Client = (function(superClass) {
       return;
     }
     return _el;
+  };
+
+  Client.prototype._getFilesFromEvent = function(evnt) {
+    var ref, ref1, ref2, ref3, ref4, ref5;
+    return ((ref = evnt.target) != null ? ref.files : void 0) || ((ref1 = evnt.originalEvent) != null ? (ref2 = ref1.target) != null ? ref2.files : void 0 : void 0) || ((ref3 = evnt.dataTransfer) != null ? ref3.files : void 0) || ((ref4 = evnt.originalEvent) != null ? (ref5 = ref4.dataTransfer) != null ? ref5.files : void 0 : void 0) || [];
   };
 
   Client.prototype.ERRORS = {
@@ -1633,18 +1642,11 @@ EventEmitter.prototype.emit = function(type) {
         break;
       // slower
       default:
-        len = arguments.length;
-        args = new Array(len - 1);
-        for (i = 1; i < len; i++)
-          args[i - 1] = arguments[i];
+        args = Array.prototype.slice.call(arguments, 1);
         handler.apply(this, args);
     }
   } else if (isObject(handler)) {
-    len = arguments.length;
-    args = new Array(len - 1);
-    for (i = 1; i < len; i++)
-      args[i - 1] = arguments[i];
-
+    args = Array.prototype.slice.call(arguments, 1);
     listeners = handler.slice();
     len = listeners.length;
     for (i = 0; i < len; i++)
@@ -1682,7 +1684,6 @@ EventEmitter.prototype.addListener = function(type, listener) {
 
   // Check for listener leak
   if (isObject(this._events[type]) && !this._events[type].warned) {
-    var m;
     if (!isUndefined(this._maxListeners)) {
       m = this._maxListeners;
     } else {
@@ -1804,7 +1805,7 @@ EventEmitter.prototype.removeAllListeners = function(type) {
 
   if (isFunction(listeners)) {
     this.removeListener(type, listeners);
-  } else {
+  } else if (listeners) {
     // LIFO order
     while (listeners.length)
       this.removeListener(type, listeners[listeners.length - 1]);
@@ -1825,15 +1826,20 @@ EventEmitter.prototype.listeners = function(type) {
   return ret;
 };
 
+EventEmitter.prototype.listenerCount = function(type) {
+  if (this._events) {
+    var evlistener = this._events[type];
+
+    if (isFunction(evlistener))
+      return 1;
+    else if (evlistener)
+      return evlistener.length;
+  }
+  return 0;
+};
+
 EventEmitter.listenerCount = function(emitter, type) {
-  var ret;
-  if (!emitter._events || !emitter._events[type])
-    ret = 0;
-  else if (isFunction(emitter._events[type]))
-    ret = 1;
-  else
-    ret = emitter._events[type].length;
-  return ret;
+  return emitter.listenerCount(type);
 };
 
 function isFunction(arg) {

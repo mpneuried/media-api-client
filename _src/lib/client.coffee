@@ -208,15 +208,17 @@ class Client extends Base
 		return
 
 	onSelect: ( evnt )=>
+		files = @_getFilesFromEvent( evnt )
 		evnt.preventDefault()
 		if not @enabled
 			return
 		if @options.maxcount <= 0 or @idx_started < @options.maxcount
 			@el.d.removeClass( @options.csshover )
-			@el.d.addClass( @options.cssprocess )
+			if files?.length
+				@el.d.addClass( @options.cssprocess )
 
-			files = evnt.target?.files or evnt.originalEvent?.target?.files or evnt.dataTransfer?.files or evnt.originalEvent?.dataTransfer?.files
-			@upload( files )
+				@upload( files )
+			return
 		else
 			@el.d.removeClass( @options.csshover )
 			@disable()
@@ -443,7 +445,8 @@ class Client extends Base
 
 		return _el
 
-	
+	_getFilesFromEvent: ( evnt )=>
+		return evnt.target?.files or evnt.originalEvent?.target?.files or evnt.dataTransfer?.files or evnt.originalEvent?.dataTransfer?.files or []
 
 	ERRORS:
 		"missing-select-el": "Missing select element. Please define a valid element as a Selector, DOM-node"
