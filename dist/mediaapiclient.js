@@ -1,6 +1,6 @@
 /*
- * Media-API-Client 1.3.1 ( 2016-06-27 )
- * https://github.com/mpneuried/media-api-client/tree/1.3.1
+ * Media-API-Client 1.3.2 ( 2016-06-27 )
+ * https://github.com/mpneuried/media-api-client/tree/1.3.2
  *
  * Released under the MIT license
  * https://github.com/mpneuried/media-api-client/blob/master/LICENSE
@@ -106,7 +106,7 @@ _defauktKeys = (function() {
 Client = (function(superClass) {
   extend(Client, superClass);
 
-  Client.prototype.version = "1.3.1";
+  Client.prototype.version = "1.3.2";
 
   Client.prototype._rgxHost = /https?:\/\/[^\/$\s]+/i;
 
@@ -465,13 +465,23 @@ Client = (function(superClass) {
       method: "POST",
       url: _url,
       body: data
-    }, function(err, resp, signature) {
-      if (err) {
-        cb(err);
-        return;
-      }
-      cb(null, signature);
-    });
+    }, (function(_this) {
+      return function(err, resp, signature) {
+        if (err) {
+          cb(err);
+          return;
+        }
+        if (resp.statusCode < 200 || resp.statusCode >= 300) {
+          _this._error(cb, "sign-failed", {
+            key: key,
+            domain: domain,
+            statusCode: resp.statusCode
+          });
+          return;
+        }
+        cb(null, signature);
+      };
+    })(this));
   };
 
   Client.prototype.abortAll = function() {
@@ -628,7 +638,8 @@ Client = (function(superClass) {
     "invalid-properties": "for the option `properties` only an object is allowed",
     "invalid-content-disposition": "for the option `content-disposition` only an string like: `attachment; filename=friendly_filename.pdf` is allowed",
     "invalid-acl": "the option acl only accepts the string `public-read` or `authenticated-read`",
-    "invalid-quality": "the option quality has to be a integer between 0 and 100"
+    "invalid-quality": "the option quality has to be a integer between 0 and 100",
+    "sign-failed": "failed to get the signature from server"
   };
 
   return Client;
@@ -1012,7 +1023,7 @@ FileView = (function(superClass) {
   };
 
   FileView.prototype._defaultTemplate = function(data) {
-    var _html, _k, _reason, _v, i, len, ref, ref1;
+    var _eMsg, _eName, _html, _k, _reason, _v, i, len, ref, ref1, ref2, ref3;
     _html = "<div class=\"thumbnail state-" + data.state + "\">\n	<b>" + data.filename + "</b>";
     switch (data.state) {
       case "progress":
@@ -1043,7 +1054,13 @@ FileView = (function(superClass) {
         }
         break;
       case "error":
-        _html += "<div class=\"alert alert-error\">An Error occured.</div>";
+        _eName = data != null ? (ref2 = data.error) != null ? ref2.name : void 0 : void 0;
+        _eMsg = data != null ? (ref3 = data.error) != null ? ref3.message : void 0 : void 0;
+        _html += "<div class=\"alert alert-error\">An Error occured.";
+        if (_eName != null ? _eName.length : void 0) {
+          _html += "<p class=\"details\"><b>" + _eName + ":</b> " + _eMsg + "</p>";
+        }
+        _html += "</div>";
         break;
       case "aborted":
         _html += "<div class=\"alert alert-error\">Upload aborted.</div>";

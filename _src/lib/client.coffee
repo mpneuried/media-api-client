@@ -319,10 +319,14 @@ class Client extends Base
 			method: "POST"
 			url: _url
 			body: data
-		}, ( err, resp, signature )->
+		}, ( err, resp, signature )=>
 			if err
 				cb( err )
 				return
+			if resp.statusCode < 200 or resp.statusCode >= 300
+				@_error( cb, "sign-failed", { key: key, domain: domain, statusCode: resp.statusCode })
+				return
+			
 			cb( null, signature )
 			return
 		)
@@ -465,6 +469,7 @@ class Client extends Base
 		"invalid-content-disposition": "for the option `content-disposition` only an string like: `attachment; filename=friendly_filename.pdf` is allowed"
 		"invalid-acl": "the option acl only accepts the string `public-read` or `authenticated-read`"
 		"invalid-quality": "the option quality has to be a integer between 0 and 100"
+		"sign-failed": "failed to get the signature from server"
 
 Client.defaults = ( options )->
 	for _k, _v of options when _k in _defauktKeys

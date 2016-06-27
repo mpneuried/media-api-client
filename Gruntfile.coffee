@@ -28,7 +28,7 @@ module.exports = (grunt) ->
 				tasks: [ "coffee:basecommonjs" ]
 
 			test:
-				files: ["_src/test/**/*.coffee", "!_src/test/**/*commonjs.coffee"]
+				files: ["_src/test/**/*.coffee", "!_src/test/**/*commonjs.coffee", "!_src/test/**/*issues.coffee"]
 				tasks: [ "coffee:test", "includereplace:test" ]
 
 			testhtml:
@@ -53,7 +53,7 @@ module.exports = (grunt) ->
 		
 		concurrent:
 			watch:
-				tasks: [ "browserify:dev", "watch" ]
+				tasks: [ "browserify:dev", "browserify:commonjs_issues", "watch" ]
 				options:
 					logConcurrentOutput: true
 		
@@ -82,6 +82,20 @@ module.exports = (grunt) ->
 						extensions: ".coffee"
 				files:
 					'test/test-commonjs.js': "_src/test/test-commonjs.coffee"
+			
+			commonjs_issues:
+				options:
+					watch: true
+					keepAlive: true
+					banner: "<%= banner %>"
+					transform: ["coffeeify"]
+					plugin: [
+						[ "browserify-derequire" ]
+					]
+					browserifyOptions:
+						extensions: ".coffee"
+				files:
+					'test/test-issues.js': "_src/test/test-issues.coffee"
 
 			basedebug:
 				options:

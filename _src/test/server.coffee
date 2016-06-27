@@ -1,5 +1,8 @@
 express = require( "express" )
+cors = require('cors')
+
 app = express()
+app.use(cors())
 
 PORT = 1337
 

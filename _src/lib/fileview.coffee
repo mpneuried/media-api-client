@@ -72,7 +72,13 @@ class FileView extends require("./base")
 				</div>
 				"""
 			when "error"
-				_html += "<div class=\"alert alert-error\">An Error occured.</div>"
+				_eName = data?.error?.name
+				_eMsg = data?.error?.message
+					
+				_html += "<div class=\"alert alert-error\">An Error occured."
+				if _eName?.length
+					_html += "<p class=\"details\"><b>#{_eName}:</b> #{_eMsg}</p>"
+				_html += "</div>"
 
 			when "aborted"
 				_html += "<div class=\"alert alert-error\">Upload aborted.</div>"
