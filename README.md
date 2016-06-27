@@ -481,6 +481,7 @@ File error
 ## Release History
 |Version|Date|Description|
 |:--:|:--:|:--|
+|v1.3.2|2016-06-27|Fixed error handling for failed signature requests|
 |v1.3.1|2016-03-29|Fixed an issue when dropping with non file elements|
 |v1.3.0|2016-02-24|Added `quality` option ( see #4 )|
 |v1.2.0|2016-02-23|Added `start` event and `count` argument for `finish` event ( see #5 ); Added client `progress` event to be able to show a cumulated progressbar ( see #6 ); Optimized error handling |
