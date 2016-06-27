@@ -43,6 +43,7 @@
     "grunt-contrib-uglify": "1.x",
     "grunt-contrib-watch": "1.x",
     "grunt-include-replace": "3.x",
-    "xhr": "2.x"
+    "xhr": "2.x",
+    "express": "4.x"
   }
 }

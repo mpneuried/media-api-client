@@ -321,7 +321,6 @@ class Client extends Base
 			body: data
 		}, ( err, resp, signature )->
 			if err
-				console.error "get sign error", err
 				cb( err )
 				return
 			cb( null, signature )

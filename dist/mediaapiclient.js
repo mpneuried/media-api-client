@@ -1,5 +1,5 @@
 /*
- * Media-API-Client 1.3.1 ( 2016-03-29 )
+ * Media-API-Client 1.3.1 ( 2016-06-27 )
  * https://github.com/mpneuried/media-api-client/tree/1.3.1
  *
  * Released under the MIT license
@@ -467,7 +467,6 @@ Client = (function(superClass) {
       body: data
     }, function(err, resp, signature) {
       if (err) {
-        console.error("get sign error", err);
         cb(err);
         return;
       }
@@ -1618,8 +1617,12 @@ EventEmitter.prototype.emit = function(type) {
       er = arguments[1];
       if (er instanceof Error) {
         throw er; // Unhandled 'error' event
+      } else {
+        // At least give some kind of context to the user
+        var err = new Error('Uncaught, unspecified "error" event. (' + er + ')');
+        err.context = er;
+        throw err;
       }
-      throw TypeError('Uncaught, unspecified "error" event.');
     }
   }
 

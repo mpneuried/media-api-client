@@ -1,4 +1,4 @@
-MediaApiClient = require( "media-api-client" )
+MediaApiClient = require( "./../lib/client" )
 MediaApiClient.defaults( { host: "@@testhost", domain: "mediaapitest", accesskey: "@@testaccesskey" } )
 
 clientStd = new MediaApiClient( "#standard", "#standard .results", { quality: 20, width: 250 } )
