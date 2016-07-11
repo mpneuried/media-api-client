@@ -61,7 +61,7 @@ Options can be used as JS options or data attributes. Expect the function option
 * **options.content-disposition** ( `String` ): the content disposition e.g. `attachment; filename=friendly_filename.pdf`
 * **options.acl** ( `String`, *default `public-read`; enum:( `public-read`, `authenticated-read` )* ): The S3 access control.
 * **options.inputclass** ( `String` ): Optional css class to find the file input
-* **options.accept** ( `String` ): Mimetyps to accept.
+* **options.accept** ( `String` ): Mimetyps to accept (See: [HTML file accept](http://www.w3schools.com/tags/att_input_accept.asp)).
 * **options.keyprefix** ( `String` *default `clientupload`* ): Key prefix 
 * **options.autostart** ( `Boolean`, *default `true`* ): Start upload on drop/change
 * **options.requestSignFn** ( `Function` ): Function to generate the signature. This Method should be redefined by you, because the standard Media-API signing will be IP filtered. So you have to tunnel it trough your own server or generate a valid signature within your server. For details see the `Signing` section. 
