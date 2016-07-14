@@ -82,6 +82,7 @@ module.exports = (grunt) ->
 						extensions: ".coffee"
 				files:
 					'test/test-commonjs.js': "_src/test/test-commonjs.coffee"
+					'test/test-issues.js': "_src/test/test-issues.coffee"
 			
 			commonjs_issues:
 				options:
@@ -187,6 +188,8 @@ module.exports = (grunt) ->
 					globals:
 						testaccesskey: "<%= cnf.test.accessKeyId %>"
 						testhost: "<%= cnf.test.host %>"
+						testport: "<%= cnf.test.port %>"
+						testdomain: "<%= cnf.test.domain %>"
 
 					prefix: "@@"
 					suffix: ''
@@ -198,6 +201,9 @@ module.exports = (grunt) ->
 					"test/test-require.html": ["test/test-require.html"]
 					"test/test-commonjs.js": ["test/test-commonjs.js"]
 					"test/test-commonjs.html": ["test/test-commonjs.html"]
+					"test/test-require.html": ["test/test-require.html"]
+					"test/test-issues.js": ["test/test-issues.js"]
+					"test/test-issues.html": ["test/test-issues.html"]
 
 	# Load npm modules
 	grunt.loadNpmTasks "grunt-contrib-clean"
@@ -223,7 +229,10 @@ module.exports = (grunt) ->
 
 	# build the project
 	grunt.registerTask "build", [ "browserify:base", "coffee:basecommonjs", "stylus:css", "includereplace:base", "minify" ]
-
+	
+	grunt.registerTask "b", "build"
+	grunt.registerTask "w", "watcher"
+	
 	# build the project
 	grunt.registerTask "build-test", [ "build", "coffee:test", "browserify:basedebug", "browserify:commonjs_test", "includereplace:test", "copy:testhtml" ]
 	grunt.registerTask "release", [ "clean:release", "build", "compress:release" ]

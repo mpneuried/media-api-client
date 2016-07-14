@@ -28,12 +28,13 @@
     "xhr": "2.x"
   },
   "devDependencies": {
+    "body-parser": "1.15.x",
     "browserify-derequire": "0.x",
     "coffeeify": "2.x",
-    "cors": "^2.7.1",
+    "cors": "2.7.x",
     "domel": "0.x",
     "express": "4.x",
-    "grunt": "0.4.x",
+    "grunt": "1.x",
     "grunt-browserify": "5.x",
     "grunt-concurrent": "2.x",
     "grunt-contrib-clean": "1.x",
@@ -44,7 +45,7 @@
     "grunt-contrib-stylus": "1.x",
     "grunt-contrib-uglify": "1.x",
     "grunt-contrib-watch": "1.x",
-    "grunt-include-replace": "3.x",
+    "grunt-include-replace": "4.x",
     "xhr": "2.x"
   }
 }
