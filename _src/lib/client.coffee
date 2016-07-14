@@ -146,13 +146,19 @@ class Client extends Base
 		_inpAccept = @sel.getAttribute( "accept" )
 		if @options.accept? or _inpAccept?
 			_html = _inpAccept?.split( "," ) or []
-			_opt = @options.accept?.split( "," ) or []
+			_opt = []
+			if @options.accept?
+				if utils.isArray( @options.accept )
+					_opt =  @options.accept
+				else
+					_opt = @options.accept?.split( "," ) or []
 			if _html?.length
 				@options.accept = _html
 			else if _opt?.length
+				@options.accept = _opt
 				@sel.setAttribute( "accept", @options.accept )
 			@options.acceptRules = @generateAcceptRules( @options.accept )
-
+		
 		@initialize()
 		@idx_started = 0
 		@idx_finished = 0

@@ -44,7 +44,16 @@ myRequestSignFn = ( domain, accesskey, madiaapiurl, key, json, cb )=>
 	)
 	return
 
-clientI8 = new MediaApiClient( "#i8", "#i8 .results", { accept: "image/png,image/jpeg",  domain: "@@testdomain", accesskey: "@@testaccesskey", host: "@@testhost", requestSignFn: myRequestSignFn } )
+clientI8 = new MediaApiClient( "#i8", "#i8 .results", { accept: "application/pdf,image/*",  domain: "@@testdomain", accesskey: "@@testaccesskey", host: "@@testhost", requestSignFn: myRequestSignFn } )
+clientI8.on "error", ( err, file )->
+	console.error "ERROR", err, file
+	return
+	
+clientI8.on "file.error", ( err, file )->
+	console.error "FILE-ERROR", err, file
+	return
+
+clientI8 = new MediaApiClient( "#i8b", "#i8b .results", { accept: "image/png,image/jpeg".split( "," ),  domain: "@@testdomain", accesskey: "@@testaccesskey", host: "@@testhost", requestSignFn: myRequestSignFn } )
 clientI8.on "error", ( err, file )->
 	console.error "ERROR", err, file
 	return
