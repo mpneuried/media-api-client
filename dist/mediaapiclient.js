@@ -1,6 +1,6 @@
 /*
- * Media-API-Client 1.3.3 ( 2016-07-14 )
- * https://github.com/mpneuried/media-api-client/tree/1.3.3
+ * Media-API-Client 1.3.4 ( 2016-10-24 )
+ * https://github.com/mpneuried/media-api-client/tree/1.3.4
  *
  * Released under the MIT license
  * https://github.com/mpneuried/media-api-client/blob/master/LICENSE
@@ -106,7 +106,7 @@ _defauktKeys = (function() {
 Client = (function(superClass) {
   extend(Client, superClass);
 
-  Client.prototype.version = "1.3.3";
+  Client.prototype.version = "1.3.4";
 
   Client.prototype._rgxHost = /https?:\/\/[^\/$\s]+/i;
 
@@ -2066,9 +2066,16 @@ function createXHR(uri, options, callback) {
 }
 
 function _createXHR(options) {
-    var callback = options.callback
-    if(typeof callback === "undefined"){
+    if(typeof options.callback === "undefined"){
         throw new Error("callback argument missing")
+    }
+
+    var called = false
+    var callback = function cbOnce(err, response, body){
+        if(!called){
+            called = true
+            options.callback(err, response, body)
+        }
     }
 
     function readystatechange() {
@@ -2111,8 +2118,7 @@ function _createXHR(options) {
             evt = new Error("" + (evt || "Unknown XMLHttpRequest Error") )
         }
         evt.statusCode = 0
-        callback(evt, failureResponse)
-        callback = noop
+        return callback(evt, failureResponse)
     }
 
     // will load the data & process the response in a special response object
@@ -2144,9 +2150,7 @@ function _createXHR(options) {
         } else {
             err = new Error("Internal XMLHttpRequest Error")
         }
-        callback(err, response, response.body)
-        callback = noop
-
+        return callback(err, response, response.body)
     }
 
     var xhr = options.xhr || null

@@ -481,6 +481,8 @@ File error
 ## Release History
 |Version|Date|Description|
 |:--:|:--:|:--|
+|v1.3.4|2016-10-24|Move peerDependencies to explicit dependencies and updated deps|
+|v1.3.3|2016-07-14|Fixed #8 and optimized accepts handling|
 |v1.3.2|2016-06-27|Fixed error handling for failed signature requests|
 |v1.3.1|2016-03-29|Fixed an issue when dropping with non file elements|
 |v1.3.0|2016-02-24|Added `quality` option ( see #4 )|
